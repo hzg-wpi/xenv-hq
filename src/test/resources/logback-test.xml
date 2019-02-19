@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+    <jmxConfigurator/>
+
+    <property name="pattern" value="%p %d [%t - %X{deviceName} - %C{1}] %logger{36}.%M:%L - %m%n"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>${pattern}</pattern>
+        </layout>
+    </appender>
+
+    <logger name="org.jacorb" level="ERROR"/>
+    <logger name="org.apache.tools.ant" level="ERROR"/>
+    <logger name="org.tango" level="ERROR"/>
+    <logger name="org.quartz" level="ERROR"/>
+    <logger name="net.sf.ehcache" level="ERROR"/>
+    <logger name="de.hzg.wpi" level="DEBUG"/>
+
+    <root level="DEBUG">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

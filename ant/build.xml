@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<project name="X-Environment Ant helpers" basedir="..">
+    <property environment="env"/>
+    <property file="src/main/resources/xenv.properties"/>
+
+    <target name="dummy">
+        <echo>Hello world!</echo>
+    </target>
+
+    <target name="pull-configuration">
+        <exec executable="hg" failifexecutionfails="true" failonerror="true">
+            <arg value="clone"/>
+            <arg value="${configuration.repo.url}"/>
+        </exec>
+    </target>
+
+    <target name="update-configuration">
+        <exec executable="hg" failifexecutionfails="true" failonerror="true">
+            <arg value="up"/>
+        </exec>
+    </target>
+
+
+    <target name="commit-configuration">
+        <exec executable="hg" dir="configuration" failifexecutionfails="true" failonerror="true">
+            <arg value="commit"/>
+            <arg value="-m"/>
+            <arg value="user ${user.name} has updated configuration"/>
+        </exec>
+    </target>
+
+    <target name="push-configuration">
+        <exec executable="hg" dir="configuration" failifexecutionfails="true" failonerror="true">
+            <arg value="push"/>
+        </exec>
+    </target>
+</project>

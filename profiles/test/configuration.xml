@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration profile="test">
+    <dataSourceList>
+        <DataSource nxPath="/entry"
+                    continuous="false"
+                    src="test/xenv/predator/name"
+        />
+    </dataSourceList>
+</Configuration>
