@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.hzg.wpi.xenv</groupId>
+    <artifactId>xenv-hq</artifactId>
+    <version>0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <!-- TODO move into a file -->
+        <StatusServer.version>2.1.3</StatusServer.version>
+        <!--<DataFormatAdapter.version>3.10</DataFormatAdapter.version>-->
+        <CamelIntegration.version>0.3</CamelIntegration.version>
+        <DataFormatServer.version>3.6</DataFormatServer.version>
+        <PreExperimentDataCollector.version>3.0.5</PreExperimentDataCollector.version>
+        <!-- other -->
+        <xenv.root>${project.build.directory}${file.separator}${project.currentProfile}</xenv.root>
+        <build.directory>${build.directory}</build.directory>
+        <artifact.file.full_path>${build.directory}${file.separator}${project.currentProfile}.tar.gz</artifact.file.full_path>
+        <artifact.file.name>${project.currentProfile}.tar.gz</artifact.file.name>
+    </properties>
+
+    <dependencies>
+        <!-- test -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-release</id>
+            <name>bintray</name>
+            <url>http://dl.bintray.com/hzgde/hzg-wpn-projects</url>
+        </repository>
+    </repositories>
+</project>
