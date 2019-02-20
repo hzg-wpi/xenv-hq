@@ -1,5 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.nexus;
 
+import com.google.common.collect.Lists;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
@@ -20,11 +21,11 @@ public class NxGroup {
     public String src;
 
     @ElementList(inline = true, required = false)
-    public List<NxGroup> groups;
+    public List<NxGroup> groups = Lists.newArrayList();
     @ElementList(inline = true, required = false)
-    public List<NxField> fields;
+    public List<NxField> fields = Lists.newArrayList();
     @ElementList(inline = true, required = false)
-    public List<NxLink> links;
+    public List<NxLink> links = Lists.newArrayList();
 
     public String getType() {
         return type;

@@ -1,6 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
 import com.google.common.base.Preconditions;
+import org.apache.tools.ant.filters.StringInputStream;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
@@ -8,6 +9,7 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +32,15 @@ public class Configuration implements Xml {
 
         Serializer serializer = new Persister();
         File source = new File(path.toAbsolutePath().toUri());
+
+        Configuration instance = serializer.read(Configuration.class, source);
+
+        return instance;
+    }
+
+    public static Configuration fromString(String xml) throws Exception {
+        Serializer serializer = new Persister();
+        InputStream source = new StringInputStream(xml);
 
         Configuration instance = serializer.read(Configuration.class, source);
 

@@ -1,5 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.nexus;
 
+import com.google.common.collect.Lists;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
@@ -15,7 +16,7 @@ public class NxDimensions {
     @Attribute
     public int rank;
     @ElementList(inline = true)
-    public List<NxDimension> dimensions;
+    public List<NxDimension> dimensions = Lists.newArrayList();
 
     public int getRank() {
         return rank;

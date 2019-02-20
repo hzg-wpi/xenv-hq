@@ -2,12 +2,9 @@ package de.hzg.wpi.xenv.hq.configuration;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
 
-import java.io.File;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -18,10 +15,17 @@ public class ConfigurationTest {
 
     @Before
     public void before() throws Exception {
-        Serializer serializer = new Persister();
-        File source = new File("profiles/test/configuration.xml");
-
-        instance = serializer.read(Configuration.class, source);
+        instance = Configuration.fromString(
+                "<Configuration profile='test'>\n" +
+                        "    <dataSourceList>\n" +
+                        "        <DataSource nxPath='/entry'\n" +
+                        "                    type='scalar'\n" +
+                        "                    src='test/xenv/predator/name'\n" +
+                        "                    pollRate='0'\n" +
+                        "            dataType='string'" +
+                        "        />\n" +
+                        "    </dataSourceList>\n" +
+                        "</Configuration>");
     }
 
     @Test
@@ -29,8 +33,9 @@ public class ConfigurationTest {
         assertNotNull(instance);
         assertEquals(1, instance.dataSourceList.size());
         assertEquals("/entry", instance.dataSourceList.get(0).nxPath);
-        assertFalse(instance.dataSourceList.get(0).continuous);
+        assertEquals("scalar", instance.dataSourceList.get(0).type);
         assertEquals("test/xenv/predator/name", instance.dataSourceList.get(0).src);
+        assertEquals("string", instance.dataSourceList.get(0).dataType);
     }
 
     @Test
