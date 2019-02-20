@@ -49,6 +49,7 @@
     <logger name="de.hzg.wpi" level="${log.level}"/>
 
     <root level="DEBUG">
+        <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ASYNC"/>
     </root>
 </configuration>

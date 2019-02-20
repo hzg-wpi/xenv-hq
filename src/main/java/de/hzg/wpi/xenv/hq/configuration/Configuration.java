@@ -8,6 +8,7 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.List;
  * @since 2/19/19
  */
 @Root(strict = false)
-public class Configuration {
+public class Configuration implements Xml {
     @Attribute
     public String profile;
 
@@ -50,5 +51,13 @@ public class Configuration {
         File result = new File(path.toAbsolutePath().toUri());
 
         serializer.write(this, result);
+    }
+
+    public String toXmlString() throws Exception {
+        Serializer serializer = new Persister();
+        StringWriter result = new StringWriter();
+
+        serializer.write(this, result);
+        return result.toString();
     }
 }

@@ -19,14 +19,17 @@ public class DataSource {
     public boolean continuous;
     @Attribute
     public String src;
+    @Attribute
+    public int pollRate;
 
     public DataSource() {
     }
 
-    public DataSource(String nxPath, boolean continuous, String src) {
+    public DataSource(String nxPath, boolean continuous, String src, int pollRate) {
         this.nxPath = nxPath;
         this.continuous = continuous;
         this.src = src;
+        this.pollRate = pollRate;
     }
 
     @Override

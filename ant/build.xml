@@ -7,15 +7,22 @@
         <echo>Hello world!</echo>
     </target>
 
-    <target name="pull-configuration">
+    <target name="clone-configuration">
         <exec executable="hg" failifexecutionfails="true" failonerror="true">
             <arg value="clone"/>
             <arg value="${configuration.repo.url}"/>
+            <arg value="configuration"/>
+        </exec>
+    </target>
+
+    <target name="pull-configuration">
+        <exec executable="hg" dir="configuration" failifexecutionfails="true" failonerror="true">
+            <arg value="pull"/>
         </exec>
     </target>
 
     <target name="update-configuration">
-        <exec executable="hg" failifexecutionfails="true" failonerror="true">
+        <exec executable="hg" dir="configuration" failifexecutionfails="true" failonerror="true">
             <arg value="up"/>
         </exec>
     </target>

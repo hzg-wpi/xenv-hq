@@ -8,13 +8,13 @@ import static org.junit.Assert.*;
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 2/19/19
  */
-public class ConfigurationManagerTest {
+public class ConfigurationManagerIT {
 
     @Test
     public void loadConfiguration() throws Exception {
         ConfigurationManager instance = new ConfigurationManager();
 
-        instance.loadConfiguration("test");
+        instance.load("test");
 
         Configuration configuration = instance.configuration;
 
