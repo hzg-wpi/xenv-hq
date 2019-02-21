@@ -38,7 +38,7 @@ public class ConfigurationManager {
     public String profile;
     @Attribute
     @AttributeProperties(format = "xml")
-    public String nexusFile;
+    public String nexusFileTemplate;
 
     @Attribute
     public String[] getProfiles() throws IOException {
@@ -57,7 +57,21 @@ public class ConfigurationManager {
         this.profile = profile;
     }
 
+    @Attribute
+    @AttributeProperties(format = "xml")
     public String getNexusFile() throws Exception {
+        Preconditions.checkNotNull(configuration);
+
+        NexusXml nexusXml = NexusXml.fromXml(
+                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"));
+        NexusXmlGenerationTask task = new NexusXmlGenerationTask(
+                new NexusXmlGenerator(configuration, nexusXml));
+        task.run();
+
+        return task.get().toXmlString();
+    }
+
+    public String getNexusFileTemplate() throws Exception {
         Preconditions.checkNotNull(configuration);
 
         return NexusXml.fromXml(
@@ -65,7 +79,7 @@ public class ConfigurationManager {
                 .toXmlString();
     }
 
-    public void setNexusFile(String nxFile) throws Exception {
+    public void setNexusFileTemplate(String nxFile) throws Exception {
         Preconditions.checkNotNull(configuration);
 
         NexusXml
@@ -177,28 +191,7 @@ public class ConfigurationManager {
     public void apply(String username) {
         //TODO configuration -> NexusFile; mapping; StatusServerXml; PredatorYaml etc
 
-        new UpdateNexusFileTask().run();
-
         new CommitConfigurationTask(username).run();
-    }
-
-    //TODO do not put data sources into nxdl.xml
-    private class UpdateNexusFileTask implements Runnable {
-        @Override
-        public void run() {
-            try {
-                NexusXml nexusXml = NexusXml.fromXml(
-                        Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"));
-                NexusXmlGenerationTask task = new NexusXmlGenerationTask(
-                        new NexusXmlGenerator(configuration, nexusXml));
-                task.run();
-                task.get()
-                        .toXml(
-                                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"));
-            } catch (Exception e) {
-                logger.error("Failed to save NexusFile", e);
-            }
-        }
     }
 
     private class CommitConfigurationTask implements Runnable {
