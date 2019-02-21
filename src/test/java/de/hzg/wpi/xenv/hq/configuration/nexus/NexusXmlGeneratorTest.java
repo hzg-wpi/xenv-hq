@@ -50,6 +50,27 @@ public class NexusXmlGeneratorTest {
     }
 
     @Test
+    public void generateNxLog_nonExistingNxPath() throws Exception {
+        Configuration configuration = new Configuration();
+        configuration.dataSourceList = Lists.newArrayList(
+                new DataSource("/entry/software/motor1/Position", "log", "tango://...", 200, "uint16")
+        );
+
+
+        NexusXmlGenerator instance = new NexusXmlGenerator(configuration, nexusXml);
+
+        NexusXml nexusXml1 = instance.call();
+
+        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='entry']/groups[name='software']/groups[name='motor1']");
+
+        assertNotNull(result);
+        assertEquals("NXcollection", result.type);
+        assertEquals("motor1", result.name);
+
+        assertEquals("Position", result.groups.get(0).name);
+    }
+
+    @Test
     public void generateNxLog_multiple() throws Exception {
         Configuration configuration = new Configuration();
         configuration.dataSourceList = Lists.newArrayList(

@@ -32,7 +32,8 @@ class NxPathParser {
         }
 
         public JxPath getJxParentPath() {
-            return new JxPath(parts.subList(0, parts.size() - 1));
+            if (parts.size() == 1) return null;
+            else return new JxPath(parts.subList(0, parts.size() - 1));
         }
 
         public String getName() {

@@ -43,8 +43,7 @@ public class NexusXmlGenerator implements Callable<NexusXml> {
             result.name = jxPath.getJxParentPath().getName();
             result.type = NexusXml.NX_COLLECTION;
 
-            ((NxGroup) jxPathContext
-                    .getValue(jxPath.getJxParentPath().getJxParentPath().toString())).groups.add(result);
+            getParentNxGroup(jxPathContext, jxPath.getJxParentPath()).groups.add(result);
 
             return result;
         }
