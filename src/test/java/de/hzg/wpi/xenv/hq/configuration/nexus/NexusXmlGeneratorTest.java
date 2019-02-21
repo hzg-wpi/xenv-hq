@@ -3,6 +3,7 @@ package de.hzg.wpi.xenv.hq.configuration.nexus;
 import com.google.common.collect.Lists;
 import de.hzg.wpi.xenv.hq.configuration.Configuration;
 import de.hzg.wpi.xenv.hq.configuration.DataSource;
+import de.hzg.wpi.xenv.hq.configuration.XmlHelper;
 import org.apache.commons.jxpath.JXPathContext;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,12 +21,12 @@ public class NexusXmlGeneratorTest {
 
     @Before
     public void before() throws Exception {
-        nexusXml = NexusXml.fromString("<definition>\n" +
+        nexusXml = XmlHelper.fromString("<definition>\n" +
                 "    <group type=\"NXentry\" name=\"entry\">\n" +
                 "        <group type=\"NXcollection\" name=\"hardware\">\n" +
                 "        </group>\n" +
                 "    </group>\n" +
-                "</definition>");
+                "</definition>", NexusXml.class);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.nexus;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -8,11 +9,11 @@ import java.util.stream.Collectors;
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 2/20/19
  */
-class NxPathParser {
+public class NxPathParser {
     public String nxPath;
 
-    public NxPathParser(String nxPath) {
-        this.nxPath = nxPath;
+    public NxPathParser(URI nxPath) {
+        this.nxPath = nxPath.getPath();
     }
 
     public JxPath toJXPath() {

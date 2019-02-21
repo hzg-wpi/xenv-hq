@@ -15,7 +15,7 @@ public class ConfigurationTest {
 
     @Before
     public void before() throws Exception {
-        instance = Configuration.fromString(
+        instance = XmlHelper.fromString(
                 "<Configuration profile='test'>\n" +
                         "    <dataSourceList>\n" +
                         "        <DataSource nxPath='/entry'\n" +
@@ -25,7 +25,7 @@ public class ConfigurationTest {
                         "            dataType='string'" +
                         "        />\n" +
                         "    </dataSourceList>\n" +
-                        "</Configuration>");
+                        "</Configuration>", Configuration.class);
     }
 
     @Test

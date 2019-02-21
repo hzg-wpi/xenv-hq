@@ -5,6 +5,7 @@ import de.hzg.wpi.xenv.hq.configuration.DataSource;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.JXPathNotFoundException;
 
+import java.net.URI;
 import java.util.concurrent.Callable;
 
 /**
@@ -26,7 +27,8 @@ public class NexusXmlGenerator implements Callable<NexusXml> {
 
         configuration.dataSourceList
                 .forEach(dataSource -> {
-                    NxPathParser.JxPath JXPath = new NxPathParser(dataSource.nxPath).toJXPath();
+                    NxPathParser.JxPath JXPath = new NxPathParser(
+                            URI.create(dataSource.nxPath)).toJXPath();
 
                     NxGroup parent = getParentNxGroup(jxPathContext, JXPath);
 

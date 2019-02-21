@@ -1,5 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.nexus;
 
+import de.hzg.wpi.xenv.hq.configuration.XmlHelper;
 import org.apache.commons.jxpath.JXPathContext;
 import org.junit.Test;
 
@@ -15,7 +16,7 @@ public class NexusXmlIT {
 
     @Test
     public void fromXml() throws Exception {
-        NexusXml result = NexusXml.fromXml(Paths.get("configuration/profiles/test/test.nxdl.xml"));
+        NexusXml result = XmlHelper.fromXml(Paths.get("configuration/profiles/test/test.nxdl.xml"), NexusXml.class);
 
         NxGroup current = (NxGroup) JXPathContext.newContext(result).
                 getValue("/groups[name='entry']/groups[name='hardware']/groups[name='beam_current']/groups[1]");
@@ -25,7 +26,7 @@ public class NexusXmlIT {
 
     @Test
     public void fromXmlString() throws Exception {
-        NexusXml result = NexusXml.fromString(
+        NexusXml result = XmlHelper.fromString(
                 "<definition>\n" +
                         "    <group type=\"NXentry\" name=\"entry\">\n" +
                         "        <group type=\"NXcollection\" name=\"hardware\">\n" +
@@ -45,7 +46,7 @@ public class NexusXmlIT {
                         "            </group>\n" +
                         "        </group>\n" +
                         "    </group>\n" +
-                        "</definition>"
+                        "</definition>", NexusXml.class
         );
 
         NxGroup current = (NxGroup) JXPathContext.newContext(result).

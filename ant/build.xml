@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="X-Environment Ant helpers" basedir="..">
     <property environment="env"/>
-    <property file="src/main/resources/xenv.properties"/>
+    <property file="url/main/resources/xenv.properties"/>
 
     <target name="dummy">
         <echo>Hello world!</echo>

@@ -3,22 +3,27 @@ package de.hzg.wpi.xenv.hq.configuration;
 import com.google.common.base.Preconditions;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
-import de.hzg.wpi.xenv.hq.configuration.mapping.MappingGenerationTask;
 import de.hzg.wpi.xenv.hq.configuration.mapping.MappingGenerator;
 import de.hzg.wpi.xenv.hq.configuration.nexus.NexusXml;
-import de.hzg.wpi.xenv.hq.configuration.nexus.NexusXmlGenerationTask;
 import de.hzg.wpi.xenv.hq.configuration.nexus.NexusXmlGenerator;
+import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXml;
+import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXmlGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tango.server.annotation.*;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -27,6 +32,7 @@ import java.util.concurrent.Executors;
 @Device
 public class ConfigurationManager {
     public static final String PROFILES_ROOT = "configuration/profiles";
+    public static final List<String> VALID_DATA_SOURCE_TYPES = Arrays.asList("scalar", "spectrum", "log");
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -62,9 +68,9 @@ public class ConfigurationManager {
     public String getNexusFile() throws Exception {
         Preconditions.checkNotNull(configuration);
 
-        NexusXml nexusXml = NexusXml.fromXml(
-                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"));
-        NexusXmlGenerationTask task = new NexusXmlGenerationTask(
+        NexusXml nexusXml = XmlHelper.fromXml(
+                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"), NexusXml.class);
+        FutureTask<NexusXml> task = new FutureTask<>(
                 new NexusXmlGenerator(configuration, nexusXml));
         task.run();
 
@@ -74,16 +80,15 @@ public class ConfigurationManager {
     public String getNexusFileTemplate() throws Exception {
         Preconditions.checkNotNull(configuration);
 
-        return NexusXml.fromXml(
-                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"))
+        return XmlHelper.fromXml(
+                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"), NexusXml.class)
                 .toXmlString();
     }
 
     public void setNexusFileTemplate(String nxFile) throws Exception {
         Preconditions.checkNotNull(configuration);
 
-        NexusXml
-                .fromString(nxFile)
+        XmlHelper.fromString(nxFile, NexusXml.class)
                 .toXml(
                         Paths.get(PROFILES_ROOT)
                                 .resolve(configuration.profile)
@@ -99,7 +104,7 @@ public class ConfigurationManager {
 
         StringWriter out = new StringWriter();
 
-        MappingGenerationTask task = new MappingGenerationTask(new MappingGenerator(configuration));
+        FutureTask<Properties> task = new FutureTask<>(new MappingGenerator(configuration));
         task.run();
         task.get().store(out, null);
 
@@ -107,8 +112,12 @@ public class ConfigurationManager {
     }
 
     @Attribute
-    public String getStatusServerXml() {
-        return "";
+    public String getStatusServerXml() throws Exception {
+        Preconditions.checkNotNull(configuration);
+
+        FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(configuration));
+        task.run();
+        return task.get().toXmlString();
     }
 
     @Attribute
@@ -151,26 +160,31 @@ public class ConfigurationManager {
     @Command
     public void load() throws Exception {
         Preconditions.checkNotNull(profile);
-        this.configuration = Configuration.fromXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve("configuration.xml"));
+        this.configuration = XmlHelper.fromXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve("configuration.xml"), Configuration.class);
     }
 
     @Command(inTypeDesc = "username" +
             "nxPath" +
             "type[scalar|spectrum|log]" +
-            "src" +
+            "url" +
             "pollRate" +
             "dataType")
     public void createDataSource(String[] params) {
-        String nxPath = params[1];
+        URI nxPath = URI.create(params[1]);
+        Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[2]));
+        URI src = URI.create(params[3]);
+
+
         DataSource result = new DataSource(
-                nxPath,
+                nxPath.toString(),
                 params[2],
-                params[3],
+                src.toString(),
                 Integer.parseInt(params[4]),
                 params[5]
         );
 
-        boolean wasAdded = configuration.addDataSource(result);//TODO update
+        //TODO update
+        boolean wasAdded = configuration.addDataSource(result);
         Preconditions.checkState(wasAdded, "DataSource with nxPath=" + nxPath + " already exists!");
 
         executorService.submit(() -> apply(params[0]));

@@ -1,5 +1,10 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
+
+import java.io.File;
+import java.io.StringWriter;
 import java.nio.file.Path;
 
 /**
@@ -7,7 +12,18 @@ import java.nio.file.Path;
  * @since 2/20/19
  */
 public interface Xml {
-    String toXmlString() throws Exception;
+    default String toXmlString() throws Exception {
+        Serializer serializer = new Persister();
+        StringWriter result = new StringWriter();
 
-    void toXml(Path path) throws Exception;
+        serializer.write(this, result);
+        return result.toString();
+    }
+
+    default void toXml(Path path) throws Exception {
+        Serializer serializer = new Persister();
+        File result = new File(path.toAbsolutePath().toUri());
+
+        serializer.write(this, result);
+    }
 }
