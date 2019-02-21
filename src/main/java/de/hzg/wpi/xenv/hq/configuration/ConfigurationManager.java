@@ -30,30 +30,48 @@ public class ConfigurationManager {
     AntProject antProject = new AntProject("ant/build.xml");
 
     Configuration configuration;
+    @Attribute(isMemorized = true)
+    public String profile;
     @Attribute
+    @AttributeProperties(format = "xml")
     public String nxFile;
 
     @Attribute
     public String[] getProfiles() throws IOException {
         Preconditions.checkState(Files.exists(Paths.get("configuration")));
 
-        return Files.list(Paths.get("configuration/profiles")).map(
+        return Files.list(Paths.get(PROFILES_ROOT)).map(
                 path -> path.getFileName().toString()
         ).toArray(String[]::new);
+    }
+
+    public String getProfile() {
+        return profile;
+    }
+
+    public void setProfile(String profile) {
+        this.profile = profile;
     }
 
     public String getNexusFile() throws Exception {
         Preconditions.checkNotNull(configuration);
 
         return NexusXml.fromXml(
-                Paths.get("configuration/profiles").resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"))
+                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"))
                 .toXmlString();
     }
 
     public void setNexusFile(String nxFile) throws Exception {
         Preconditions.checkNotNull(configuration);
 
-        NexusXml.fromString(nxFile).toXml(Paths.get("configuration/profiles").resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"));
+        NexusXml
+                .fromString(nxFile)
+                .toXml(
+                        Paths.get(PROFILES_ROOT)
+                                .resolve(configuration.profile)
+                                .resolve(configuration.profile + ".nxdl.xml"));
+
+        executorService.submit(new CommitConfigurationTask(System.getProperty("user.name", "unknown")));
     }
 
 
@@ -79,12 +97,16 @@ public class ConfigurationManager {
     }
 
     @Init
-    public void init() throws IOException {
+    public void init() throws Exception {
         if (Files.exists(Paths.get("configuration"))) {
             update();
         } else {
             new AntTaskExecutor("clone-configuration", antProject).run();
         }
+
+        if (profile != null)
+            load(profile);
+
 
         logger.info("ConfigurationManager has been initialized.");
     }
@@ -179,6 +201,7 @@ public class ConfigurationManager {
                 new AntTaskExecutor("push-configuration", antProject).run();
             } catch (Exception e) {
                 logger.error("Failed to save configuration.xml");
+                //TODO send event
             }
         }
     }
