@@ -30,6 +30,19 @@ public class ConfigurationManagerIT {
         assertEquals("test/xenv/predator/name", configuration.dataSourceList.get(0).src);
     }
 
+
+    @Test
+    public void getNexusFile() throws Exception {
+        ConfigurationManager instance = new ConfigurationManager();
+
+        instance.profile = "test";
+        instance.load();
+
+        String result = instance.getNexusFile();
+        System.out.println(result);
+
+    }
+
     @Test
     public void getNexusMapping() throws Exception {
         ConfigurationManager instance = new ConfigurationManager();
