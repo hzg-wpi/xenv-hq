@@ -3,6 +3,8 @@ package de.hzg.wpi.xenv.hq.configuration;
 import com.google.common.base.Preconditions;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
+import de.hzg.wpi.xenv.hq.configuration.mapping.MappingGenerationTask;
+import de.hzg.wpi.xenv.hq.configuration.mapping.MappingGenerator;
 import de.hzg.wpi.xenv.hq.configuration.nexus.NexusXml;
 import de.hzg.wpi.xenv.hq.configuration.nexus.NexusXmlGenerationTask;
 import de.hzg.wpi.xenv.hq.configuration.nexus.NexusXmlGenerator;
@@ -11,8 +13,10 @@ import org.slf4j.LoggerFactory;
 import org.tango.server.annotation.*;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,7 +38,7 @@ public class ConfigurationManager {
     public String profile;
     @Attribute
     @AttributeProperties(format = "xml")
-    public String nxFile;
+    public String nexusFile;
 
     @Attribute
     public String[] getProfiles() throws IOException {
@@ -76,8 +80,16 @@ public class ConfigurationManager {
 
 
     @Attribute
-    public String getNexusMapping() {
-        return "";
+    public String getNexusMapping() throws ExecutionException, InterruptedException, IOException {
+        Preconditions.checkNotNull(configuration);
+
+        StringWriter out = new StringWriter();
+
+        MappingGenerationTask task = new MappingGenerationTask(new MappingGenerator(configuration));
+        task.run();
+        task.get().store(out, null);
+
+        return out.toString();
     }
 
     @Attribute
@@ -105,7 +117,7 @@ public class ConfigurationManager {
         }
 
         if (profile != null)
-            load(profile);
+            load();
 
 
         logger.info("ConfigurationManager has been initialized.");
@@ -122,8 +134,9 @@ public class ConfigurationManager {
         new AntTaskExecutor("update-configuration", antProject).run();
     }
 
-    @Command(inTypeDesc = "Configuration profile to load")
-    public void load(String profile) throws Exception {
+    @Command
+    public void load() throws Exception {
+        Preconditions.checkNotNull(profile);
         this.configuration = Configuration.fromXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve("configuration.xml"));
     }
 
@@ -169,15 +182,17 @@ public class ConfigurationManager {
         new CommitConfigurationTask(username).run();
     }
 
+    //TODO do not put data sources into nxdl.xml
     private class UpdateNexusFileTask implements Runnable {
         @Override
         public void run() {
             try {
                 NexusXml nexusXml = NexusXml.fromXml(
                         Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"));
-                new NexusXmlGenerationTask(
-                        new NexusXmlGenerator(configuration, nexusXml))
-                        .get()
+                NexusXmlGenerationTask task = new NexusXmlGenerationTask(
+                        new NexusXmlGenerator(configuration, nexusXml));
+                task.run();
+                task.get()
                         .toXml(
                                 Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"));
             } catch (Exception e) {

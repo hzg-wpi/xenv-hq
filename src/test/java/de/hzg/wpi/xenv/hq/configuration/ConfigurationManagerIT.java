@@ -3,6 +3,7 @@ package de.hzg.wpi.xenv.hq.configuration;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -17,7 +18,8 @@ public class ConfigurationManagerIT {
     public void loadConfiguration() throws Exception {
         ConfigurationManager instance = new ConfigurationManager();
 
-        instance.load("test");
+        instance.profile = "test";
+        instance.load();
 
         Configuration configuration = instance.configuration;
 
@@ -26,5 +28,18 @@ public class ConfigurationManagerIT {
         assertEquals("/entry", configuration.dataSourceList.get(0).nxPath);
         assertEquals("scalar", configuration.dataSourceList.get(0).type);
         assertEquals("test/xenv/predator/name", configuration.dataSourceList.get(0).src);
+    }
+
+    @Test
+    public void getNexusMapping() throws Exception {
+        ConfigurationManager instance = new ConfigurationManager();
+
+        instance.profile = "test";
+        instance.load();
+
+        String result = instance.getNexusMapping();
+        System.out.println(result);
+
+        assertTrue(result.contains("tango\\://"));//escape ':'
     }
 }
