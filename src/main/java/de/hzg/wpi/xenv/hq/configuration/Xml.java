@@ -22,7 +22,7 @@ public interface Xml {
 
     default void toXml(Path path) throws Exception {
         Serializer serializer = new Persister();
-        File result = new File(path.toAbsolutePath().toUri());
+        File result = path.toAbsolutePath().toFile();
 
         serializer.write(this, result);
     }

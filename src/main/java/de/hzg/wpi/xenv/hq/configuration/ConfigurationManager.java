@@ -7,6 +7,7 @@ import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoutesXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
+import de.hzg.wpi.xenv.hq.configuration.predator.MetaYaml;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXml;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXmlGenerator;
 import org.slf4j.Logger;
@@ -39,6 +40,8 @@ public class ConfigurationManager {
     public static final String CAMEL_INTEGRATION = "CamelIntegration";
     public static final String ROUTES_XML = "routes.xml";
     public static final String TEMPLATE_NXDL_XML = "template.nxdl.xml";
+    public static final String PRE_EXPERIMENT_DATA_COLLECTOR = "PreExperimentDataCollector";
+    public static final String META_YAML = "meta.yaml";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -54,6 +57,9 @@ public class ConfigurationManager {
     @Attribute
     @AttributeProperties(format = "xml")
     public String camelRoutes;
+    @Attribute
+    @AttributeProperties(format = "yaml")
+    public String preExperimentDataCollectorYaml;
 
     @Attribute
     public String[] getProfiles() throws IOException {
@@ -157,9 +163,23 @@ public class ConfigurationManager {
         return task.get().toXmlString();
     }
 
-    @Attribute
-    public String getPreExperimentDataCollectorYaml() {
-        return "";
+    public String getPreExperimentDataCollectorYaml() throws IOException {
+        Object yaml = MetaYaml.fromYamlFile(
+                Paths.get(PROFILES_ROOT)
+                        .resolve(configuration.profile)
+                        .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
+                        .resolve(META_YAML));
+        return MetaYaml.toYamlString(yaml);
+    }
+
+    public void setPreExperimentDataCollectorYaml(String yamlString) throws Exception {
+        Object yaml = MetaYaml.fromString(yamlString);
+        MetaYaml.toYaml(yaml, Paths.get(PROFILES_ROOT)
+                .resolve(configuration.profile)
+                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
+                .resolve(META_YAML));
+
+        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
     }
 
     @Attribute
