@@ -3,6 +3,7 @@ package de.hzg.wpi.xenv.hq.configuration;
 import com.google.common.base.Preconditions;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
+import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoutesXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
@@ -35,6 +36,9 @@ public class ConfigurationManager {
     public static final String PROFILES_ROOT = "configuration/profiles";
     public static final List<String> VALID_DATA_SOURCE_TYPES = Arrays.asList("scalar", "spectrum", "log");
     public static final String DATA_FORMAT_SERVER = "DataFormatServer";
+    public static final String CAMEL_INTEGRATION = "CamelIntegration";
+    public static final String ROUTES_XML = "routes.xml";
+    public static final String TEMPLATE_NXDL_XML = "template.nxdl.xml";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -47,6 +51,9 @@ public class ConfigurationManager {
     @Attribute
     @AttributeProperties(format = "xml")
     public String nexusFileTemplate;
+    @Attribute
+    @AttributeProperties(format = "xml")
+    public String camelRoutes;
 
     @Attribute
     public String[] getProfiles() throws IOException {
@@ -83,7 +90,10 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(configuration);
 
         return XmlHelper.fromXml(
-                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve("template.nxdl.xml"), NexusXml.class)
+                Paths.get(PROFILES_ROOT)
+                        .resolve(configuration.profile)
+                        .resolve(DATA_FORMAT_SERVER)
+                        .resolve(TEMPLATE_NXDL_XML), NexusXml.class)
                 .toXmlString();
     }
 
@@ -95,11 +105,35 @@ public class ConfigurationManager {
                         Paths.get(PROFILES_ROOT)
                                 .resolve(configuration.profile)
                                 .resolve(DATA_FORMAT_SERVER)
-                                .resolve("template.nxdl.xml"));
+                                .resolve(TEMPLATE_NXDL_XML));
 
         executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
     }
 
+
+    public String getCamelRoutes() throws Exception {
+        Preconditions.checkNotNull(configuration);
+
+        return XmlHelper.fromXml(
+                Paths.get(PROFILES_ROOT)
+                        .resolve(configuration.profile)
+                        .resolve(CAMEL_INTEGRATION)
+                        .resolve(ROUTES_XML), NexusXml.class)
+                .toXmlString();
+    }
+
+    public void setCamelRoutes(String xml) throws Exception {
+        Preconditions.checkNotNull(configuration);
+
+        XmlHelper.fromString(xml, CamelRoutesXml.class)
+                .toXml(
+                        Paths.get(PROFILES_ROOT)
+                                .resolve(configuration.profile)
+                                .resolve(CAMEL_INTEGRATION)
+                                .resolve(ROUTES_XML));
+
+        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
+    }
 
     @Attribute
     public String getNexusMapping() throws ExecutionException, InterruptedException, IOException {
