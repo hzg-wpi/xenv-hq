@@ -118,7 +118,7 @@ public class ConfigurationManager {
                 Paths.get(PROFILES_ROOT)
                         .resolve(configuration.profile)
                         .resolve(CAMEL_INTEGRATION)
-                        .resolve(ROUTES_XML), NexusXml.class)
+                        .resolve(ROUTES_XML), CamelRoutesXml.class)
                 .toXmlString();
     }
 
