@@ -20,7 +20,7 @@ public class StatusServerXmlTest {
                 "    <attributes>\n" +
                 "    </attributes>\n" +
                 "    <devices>\n" +
-                "        <device name=\"/PETRA/Idc/Buffer-0\">\n" +
+                "        <device name=\"Buffer-0\" url=\"tine:/PETRA/Idc/Buffer-0\">\n" +
                 "            <attributes>\n" +
                 "                <attribute name=\"I.SCH\" alias=\"BEAM_CURRENT\" method=\"event\" interpolation=\"last\" delay=\"0\" type=\"change\"/>\n" +
                 "            </attributes>\n" +

@@ -1,6 +1,7 @@
 package de.hzg.wpi.xenv.hq;
 
 import de.hzg.wpi.xenv.hq.configuration.ConfigurationManager;
+import de.hzg.wpi.xenv.hq.manager.XenvManager;
 import org.tango.server.ServerManager;
 
 import java.io.IOException;

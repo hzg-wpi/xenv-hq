@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq;
+package de.hzg.wpi.xenv.hq.manager;
 
 import org.tango.server.annotation.Command;
 import org.tango.server.annotation.Device;

@@ -19,13 +19,13 @@ public class StatusServerXmlGeneratorTest {
                         "    <dataSourceList>\n" +
                         "        <DataSource nxPath='/entry'\n" +
                         "                    type='scalar'\n" +
-                        "                    url='test/xenv/predator/name'\n" +
+                        "                    src='test/xenv/predator/name'\n" +
                         "                    pollRate='0'\n" +
                         "            dataType='string'" +
                         "        />\n" +
                         "        <DataSource nxPath='/entry/hardware'\n" +
                         "                    type='log'\n" +
-                        "                    url='tango://tango_host:10000/test/xenv/motor1/position'\n" +
+                        "                    src='tango://tango_host:10000/test/xenv/motor1/position'\n" +
                         "                    pollRate='200'\n" +
                         "            dataType='string'" +
                         "        />\n" +
