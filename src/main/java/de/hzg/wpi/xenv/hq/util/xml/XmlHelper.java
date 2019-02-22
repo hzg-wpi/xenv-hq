@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq.configuration;
+package de.hzg.wpi.xenv.hq.util.xml;
 
 import com.google.common.base.Preconditions;
 import org.apache.tools.ant.filters.StringInputStream;

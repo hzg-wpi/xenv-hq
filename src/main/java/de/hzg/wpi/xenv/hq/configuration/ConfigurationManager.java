@@ -1,15 +1,17 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
 import com.google.common.base.Preconditions;
+import de.hzg.wpi.xenv.hq.HeadQuarter;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
 import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoutesXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
-import de.hzg.wpi.xenv.hq.configuration.predator.MetaYaml;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXml;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXmlGenerator;
+import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
+import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tango.DeviceState;
@@ -34,7 +36,6 @@ import java.util.concurrent.FutureTask;
  */
 @Device
 public class ConfigurationManager {
-    public static final String PROFILES_ROOT = "configuration/profiles";
     public static final List<String> VALID_DATA_SOURCE_TYPES = Arrays.asList("scalar", "spectrum", "log");
     public static final String DATA_FORMAT_SERVER = "DataFormatServer";
     public static final String CAMEL_INTEGRATION = "CamelIntegration";
@@ -46,7 +47,7 @@ public class ConfigurationManager {
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    AntProject antProject = new AntProject("ant/build.xml");
+    private final AntProject antProject = new AntProject("ant/build.xml");
 
     Configuration configuration;
     @Attribute(isMemorized = true)
@@ -65,7 +66,7 @@ public class ConfigurationManager {
     public String[] getProfiles() throws IOException {
         Preconditions.checkState(Files.exists(Paths.get("configuration")));
 
-        return Files.list(Paths.get(PROFILES_ROOT)).map(
+        return Files.list(Paths.get(HeadQuarter.PROFILES_ROOT)).map(
                 path -> path.getFileName().toString()
         ).toArray(String[]::new);
     }
@@ -84,7 +85,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(configuration);
 
         NexusXml nexusXml = XmlHelper.fromXml(
-                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve("template.nxdl.xml"), NexusXml.class);
+                Paths.get(HeadQuarter.PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve("template.nxdl.xml"), NexusXml.class);
         FutureTask<NexusXml> task = new FutureTask<>(
                 new NexusXmlGenerator(configuration, nexusXml));
         task.run();
@@ -96,7 +97,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(configuration);
 
         return XmlHelper.fromXml(
-                Paths.get(PROFILES_ROOT)
+                Paths.get(HeadQuarter.PROFILES_ROOT)
                         .resolve(configuration.profile)
                         .resolve(DATA_FORMAT_SERVER)
                         .resolve(TEMPLATE_NXDL_XML), NexusXml.class)
@@ -108,7 +109,7 @@ public class ConfigurationManager {
 
         XmlHelper.fromString(nxFile, NexusXml.class)
                 .toXml(
-                        Paths.get(PROFILES_ROOT)
+                        Paths.get(HeadQuarter.PROFILES_ROOT)
                                 .resolve(configuration.profile)
                                 .resolve(DATA_FORMAT_SERVER)
                                 .resolve(TEMPLATE_NXDL_XML));
@@ -121,7 +122,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(configuration);
 
         return XmlHelper.fromXml(
-                Paths.get(PROFILES_ROOT)
+                Paths.get(HeadQuarter.PROFILES_ROOT)
                         .resolve(configuration.profile)
                         .resolve(CAMEL_INTEGRATION)
                         .resolve(ROUTES_XML), CamelRoutesXml.class)
@@ -133,7 +134,7 @@ public class ConfigurationManager {
 
         XmlHelper.fromString(xml, CamelRoutesXml.class)
                 .toXml(
-                        Paths.get(PROFILES_ROOT)
+                        Paths.get(HeadQuarter.PROFILES_ROOT)
                                 .resolve(configuration.profile)
                                 .resolve(CAMEL_INTEGRATION)
                                 .resolve(ROUTES_XML));
@@ -164,17 +165,17 @@ public class ConfigurationManager {
     }
 
     public String getPreExperimentDataCollectorYaml() throws IOException {
-        Object yaml = MetaYaml.fromYamlFile(
-                Paths.get(PROFILES_ROOT)
+        Object yaml = YamlHelper.fromYamlFile(
+                Paths.get(HeadQuarter.PROFILES_ROOT)
                         .resolve(configuration.profile)
                         .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
                         .resolve(META_YAML));
-        return MetaYaml.toYamlString(yaml);
+        return YamlHelper.toYamlString(yaml);
     }
 
     public void setPreExperimentDataCollectorYaml(String yamlString) throws Exception {
-        Object yaml = MetaYaml.fromString(yamlString);
-        MetaYaml.toYaml(yaml, Paths.get(PROFILES_ROOT)
+        Object yaml = YamlHelper.fromString(yamlString);
+        YamlHelper.toYaml(yaml, Paths.get(HeadQuarter.PROFILES_ROOT)
                 .resolve(configuration.profile)
                 .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
                 .resolve(META_YAML));
@@ -219,7 +220,7 @@ public class ConfigurationManager {
     @Command
     public void load() throws Exception {
         Preconditions.checkNotNull(profile);
-        this.configuration = XmlHelper.fromXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve("configuration.xml"), Configuration.class);
+        this.configuration = XmlHelper.fromXml(Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve("configuration.xml"), Configuration.class);
     }
 
     @Command(inTypeDesc =
@@ -267,7 +268,7 @@ public class ConfigurationManager {
 
         public void run() {
             try {
-                configuration.toXml(Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve("configuration.xml"));
+                configuration.toXml(Paths.get(HeadQuarter.PROFILES_ROOT).resolve(configuration.profile).resolve("configuration.xml"));
                 antProject.getProject().setUserProperty("user.name", userName);
                 new AntTaskExecutor("commit-configuration", antProject).run();
                 new AntTaskExecutor("push-configuration", antProject).run();

@@ -1,5 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
+import de.hzg.wpi.xenv.hq.util.xml.Xml;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;

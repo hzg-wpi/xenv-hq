@@ -1,6 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.camel;
 
-import de.hzg.wpi.xenv.hq.configuration.Xml;
+import de.hzg.wpi.xenv.hq.util.xml.Xml;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 

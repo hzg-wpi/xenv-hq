@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="X-Environment Ant helpers" basedir="..">
     <property environment="env"/>
-    <property file="url/main/resources/xenv.properties"/>
+    <property file="src/main/resources/xenv.properties"/>
 
     <target name="dummy">
         <echo>Hello world!</echo>
@@ -40,5 +40,24 @@
         <exec executable="hg" dir="configuration" failifexecutionfails="true" failonerror="true">
             <arg value="push"/>
         </exec>
+    </target>
+
+    <target name="prepare-executable">
+        <copy todir="bin" tofile="${executable}" overwrite="true">
+            <fileset dir="${basedir}/configuration/bin">
+                <include name="Executable_template"/>
+            </fileset>
+            <filterset>
+                <filter token="TANGO_HOST" value="${tango_host}"/>
+                <filter token="SERVER_NAME" value="${server_name}"/>
+                <filter token="INSTANCE_NAME" value="${instance_name}"/>
+                <filter token="MAIN_CLASS" value="${main_class}"/>
+                <filter token="VERSION" value="${version}"/>
+                <filter token="JMX_PORT" value="${jmx_port}"/>
+                <filter token="TINE_HOME" value="${tine_home}"/>
+                <filter token="LOG_HOME" value="${log_home}"/>
+                <filter token="LOG_LEVEL" value="${log_level}"/>
+            </filterset>
+        </copy>
     </target>
 </project>

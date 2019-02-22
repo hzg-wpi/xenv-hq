@@ -1,9 +1,12 @@
-package de.hzg.wpi.xenv.hq.configuration.predator;
+package de.hzg.wpi.xenv.hq.util.yaml;
 
 import com.google.common.base.Preconditions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -11,8 +14,8 @@ import java.nio.file.Path;
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 2/22/19
  */
-public class MetaYaml {
-    private MetaYaml() {
+public class YamlHelper {
+    private YamlHelper() {
     }
 
     public static String toYamlString(Object yaml) {
@@ -31,13 +34,13 @@ public class MetaYaml {
     }
 
 
-    public static Object fromString(String yaml) {
+    public static <T> T fromString(String yaml) {
         Yaml parser = new Yaml();
 
-        return parser.load(new StringReader(yaml));
+        return parser.<T>load(yaml);
     }
 
-    public static Object fromYamlFile(Path path) throws IOException {
+    public static <T> T fromYamlFile(Path path) throws IOException {
         Preconditions.checkArgument(Files.exists(path));
 
         Yaml parser = new Yaml();

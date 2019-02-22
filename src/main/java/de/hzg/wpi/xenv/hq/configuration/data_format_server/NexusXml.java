@@ -1,7 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
 import com.google.common.collect.Lists;
-import de.hzg.wpi.xenv.hq.configuration.Xml;
+import de.hzg.wpi.xenv.hq.util.xml.Xml;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 

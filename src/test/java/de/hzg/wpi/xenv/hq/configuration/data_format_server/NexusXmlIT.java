@@ -1,6 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
-import de.hzg.wpi.xenv.hq.configuration.XmlHelper;
+import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import org.apache.commons.jxpath.JXPathContext;
 import org.junit.Test;
 

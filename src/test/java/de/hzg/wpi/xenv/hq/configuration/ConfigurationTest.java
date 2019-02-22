@@ -1,5 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
+import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import org.junit.Before;
 import org.junit.Test;
 

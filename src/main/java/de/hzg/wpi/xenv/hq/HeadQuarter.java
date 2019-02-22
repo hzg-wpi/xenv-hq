@@ -12,6 +12,8 @@ import java.util.Properties;
  * @since 2/19/19
  */
 public class HeadQuarter {
+    public static final String PROFILES_ROOT = "configuration/profiles";
+
     public static void main(String[] args) throws IOException {
         setSystemProperties();
 

@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq.configuration;
+package de.hzg.wpi.xenv.hq.util.xml;
 
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;

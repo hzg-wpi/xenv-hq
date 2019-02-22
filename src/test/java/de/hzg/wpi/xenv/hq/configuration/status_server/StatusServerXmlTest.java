@@ -1,6 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.status_server;
 
-import de.hzg.wpi.xenv.hq.configuration.XmlHelper;
+import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import org.junit.Test;
 
 /**
