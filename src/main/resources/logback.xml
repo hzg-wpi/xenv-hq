@@ -43,7 +43,7 @@
 
     <logger name="org.jacorb" level="ERROR"/>
     <logger name="org.tango" level="ERROR"/>
-    <logger name="org.apache.tools.ant" level="ERROR"/>
+    <logger name="org.apache.tools.ant" level="INFO"/>
     <logger name="org.quartz" level="ERROR"/>
     <logger name="net.sf.ehcache" level="ERROR"/>
     <logger name="de.hzg.wpi" level="${log.level}"/>

@@ -1,6 +1,5 @@
 package de.hzg.wpi.xenv.hq.ant;
 
-import org.apache.tools.ant.DefaultLogger;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
 import org.apache.tools.ant.listener.Log4jListener;
@@ -27,11 +26,11 @@ public class AntProject {
         ProjectHelper helper = ProjectHelper.getProjectHelper();
         p.addReference("ant.projectHelper", helper);
         helper.parse(p, buildFile);
-        DefaultLogger consoleLogger = new DefaultLogger();
-        consoleLogger.setErrorPrintStream(System.err);
-        consoleLogger.setOutputPrintStream(System.out);
-        consoleLogger.setMessageOutputLevel(Project.MSG_INFO);
-        p.addBuildListener(consoleLogger);
+//        DefaultLogger consoleLogger = new DefaultLogger();
+//        consoleLogger.setErrorPrintStream(System.err);
+//        consoleLogger.setOutputPrintStream(System.out);
+//        consoleLogger.setMessageOutputLevel(Project.MSG_INFO);
+//        p.addBuildListener(consoleLogger);
 
         Log4jListener log4jListener = new Log4jListener();
         p.addBuildListener(log4jListener);
