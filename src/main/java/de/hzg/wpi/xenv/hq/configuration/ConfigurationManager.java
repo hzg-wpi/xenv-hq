@@ -3,13 +3,14 @@ package de.hzg.wpi.xenv.hq.configuration;
 import com.google.common.base.Preconditions;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
-import de.hzg.wpi.xenv.hq.configuration.mapping.MappingGenerator;
-import de.hzg.wpi.xenv.hq.configuration.nexus.NexusXml;
-import de.hzg.wpi.xenv.hq.configuration.nexus.NexusXmlGenerator;
+import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXml;
+import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
+import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXml;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXmlGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tango.DeviceState;
 import org.tango.server.annotation.*;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ import java.util.concurrent.FutureTask;
 public class ConfigurationManager {
     public static final String PROFILES_ROOT = "configuration/profiles";
     public static final List<String> VALID_DATA_SOURCE_TYPES = Arrays.asList("scalar", "spectrum", "log");
+    public static final String DATA_FORMAT_SERVER = "DataFormatServer";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -69,7 +71,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(configuration);
 
         NexusXml nexusXml = XmlHelper.fromXml(
-                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"), NexusXml.class);
+                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve(configuration.profile + ".nxdl.xml"), NexusXml.class);
         FutureTask<NexusXml> task = new FutureTask<>(
                 new NexusXmlGenerator(configuration, nexusXml));
         task.run();
@@ -81,7 +83,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(configuration);
 
         return XmlHelper.fromXml(
-                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(configuration.profile + ".nxdl.xml"), NexusXml.class)
+                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve(configuration.profile + ".nxdl.xml"), NexusXml.class)
                 .toXmlString();
     }
 
@@ -92,9 +94,10 @@ public class ConfigurationManager {
                 .toXml(
                         Paths.get(PROFILES_ROOT)
                                 .resolve(configuration.profile)
+                                .resolve(DATA_FORMAT_SERVER)
                                 .resolve(configuration.profile + ".nxdl.xml"));
 
-        executorService.submit(new CommitConfigurationTask(System.getProperty("user.name", "unknown")));
+        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
     }
 
 
@@ -132,6 +135,7 @@ public class ConfigurationManager {
     }
 
     @Init
+    @StateMachine(endState = DeviceState.ON)
     public void init() throws Exception {
         if (Files.exists(Paths.get("configuration"))) {
             update();
@@ -147,6 +151,7 @@ public class ConfigurationManager {
     }
 
     @Delete
+    @StateMachine(endState = DeviceState.OFF)
     public void delete() {
         new AntTaskExecutor("push-configuration", antProject).run();
     }
@@ -186,8 +191,6 @@ public class ConfigurationManager {
         //TODO update
         boolean wasAdded = configuration.addDataSource(result);
         Preconditions.checkState(wasAdded, "DataSource with nxPath=" + nxPath + " already exists!");
-
-        executorService.submit(() -> apply(params[0]));
     }
 
     @Command(inTypeDesc = "username" +
@@ -197,21 +200,17 @@ public class ConfigurationManager {
         result.nxPath = params[1];
 
         configuration.removeDataSource(result);
-
-        executorService.submit(() -> apply(params[0]));
     }
 
     @Command
-    public void apply(String username) {
-        //TODO configuration -> NexusFile; mapping; StatusServerXml; PredatorYaml etc
-
-        new CommitConfigurationTask(username).run();
+    public void store(String username) {
+        new CommitAndPushConfigurationTask(username).run();
     }
 
-    private class CommitConfigurationTask implements Runnable {
+    private class CommitAndPushConfigurationTask implements Runnable {
         String userName;
 
-        public CommitConfigurationTask(String userName) {
+        public CommitAndPushConfigurationTask(String userName) {
             this.userName = userName;
         }
 

@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq.configuration.nexus;
+package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;

@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq.configuration.nexus;
+package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
 import de.hzg.wpi.xenv.hq.configuration.XmlHelper;
 import org.apache.commons.jxpath.JXPathContext;

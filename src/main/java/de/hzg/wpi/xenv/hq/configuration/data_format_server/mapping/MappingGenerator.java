@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq.configuration.mapping;
+package de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping;
 
 import de.hzg.wpi.xenv.hq.configuration.Configuration;
 

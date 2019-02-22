@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq.configuration.nexus;
+package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
 import java.net.URI;
 import java.util.Arrays;
