@@ -188,9 +188,7 @@ public class ConfigurationManager {
                 params[5]
         );
 
-        //TODO update
-        boolean wasAdded = configuration.addDataSource(result);
-        Preconditions.checkState(wasAdded, "DataSource with nxPath=" + nxPath + " already exists!");
+        configuration.addOrReplaceDataSource(result);
     }
 
     @Command(inTypeDesc = "username" +

@@ -140,4 +140,33 @@ public class NexusXmlGeneratorTest {
         assertEquals("uint16", result.fields.get(0).type);
         assertNotNull(result.fields.get(0).dimensions);
     }
+
+    @Test
+    public void generateNxField_replaceExisting() throws Exception {
+        nexusXml = XmlHelper.fromString("<definition>\n" +
+                "    <group type=\"NXentry\" name=\"entry\">\n" +
+                "        <group type=\"NXcollection\" name=\"hardware\">\n" +
+                "            <field type=\"string\" name=\"name\"/>\n" +
+                "        </group>\n" +
+                "    </group>\n" +
+                "</definition>", NexusXml.class);
+
+
+        Configuration configuration = new Configuration();
+        configuration.dataSourceList = Lists.newArrayList(
+                new DataSource("/entry/hardware/name", "scalar", "tango://...", 200, "uint16")
+        );
+
+
+        NexusXmlGenerator instance = new NexusXmlGenerator(configuration, nexusXml);
+
+        NexusXml nexusXml1 = instance.call();
+
+        NxField result = (NxField) JXPathContext.newContext(nexusXml1).getValue("/groups[name='entry']/groups[name='hardware']/fields[name='name']");
+
+        assertNotNull(result);
+        //TODO should we replace existing?
+        assertEquals(2, nexusXml1.groups.get(0).groups.get(0).fields.size());
+//        assertEquals("uint16", result.type);
+    }
 }

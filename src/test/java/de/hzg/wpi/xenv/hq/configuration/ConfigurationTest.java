@@ -3,6 +3,7 @@ package de.hzg.wpi.xenv.hq.configuration;
 import org.junit.Before;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -43,5 +44,28 @@ public class ConfigurationTest {
         String result = instance.toXmlString();
 
         System.out.println(result);
+    }
+
+    @Test
+    public void addDataSource() {
+        instance.addOrReplaceDataSource(new DataSource("/entry/hardware/motor", "log", "test/motor/0", 200, "float32"));
+
+        assertEquals(2, instance.dataSourceList.size());
+        assertEquals("/entry/hardware/motor", instance.dataSourceList.get(1).nxPath);
+    }
+
+    @Test
+    public void replaceDataSource() {
+        instance.addOrReplaceDataSource(new DataSource("/entry", "log", "test/motor/0", 200, "float32"));
+
+        assertEquals(1, instance.dataSourceList.size());
+        assertEquals("test/motor/0", instance.dataSourceList.get(0).src);
+    }
+
+    @Test
+    public void removeDataSource() {
+        instance.removeDataSource(new DataSource("/entry", "log", "test/motor/0", 200, "float32"));
+
+        assertTrue(instance.dataSourceList.isEmpty());
     }
 }

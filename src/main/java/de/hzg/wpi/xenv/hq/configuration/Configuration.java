@@ -18,13 +18,12 @@ public class Configuration implements Xml {
     @ElementList
     public List<DataSource> dataSourceList;
 
-    public boolean addDataSource(DataSource result) {
-        if (dataSourceList.contains(result)) return false;
+    public void addOrReplaceDataSource(DataSource result) {
+        removeDataSource(result);
         dataSourceList.add(result);
-        return true;
     }
 
     public void removeDataSource(DataSource result) {
-        dataSourceList.remove(result);
+        dataSourceList.removeIf(dataSource -> dataSource.equals(result));
     }
 }
