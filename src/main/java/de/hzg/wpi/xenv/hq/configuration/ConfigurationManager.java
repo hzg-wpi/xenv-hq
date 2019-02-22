@@ -71,7 +71,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(configuration);
 
         NexusXml nexusXml = XmlHelper.fromXml(
-                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve(configuration.profile + ".nxdl.xml"), NexusXml.class);
+                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve("template.nxdl.xml"), NexusXml.class);
         FutureTask<NexusXml> task = new FutureTask<>(
                 new NexusXmlGenerator(configuration, nexusXml));
         task.run();
@@ -83,7 +83,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(configuration);
 
         return XmlHelper.fromXml(
-                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve(configuration.profile + ".nxdl.xml"), NexusXml.class)
+                Paths.get(PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve("template.nxdl.xml"), NexusXml.class)
                 .toXmlString();
     }
 
@@ -95,7 +95,7 @@ public class ConfigurationManager {
                         Paths.get(PROFILES_ROOT)
                                 .resolve(configuration.profile)
                                 .resolve(DATA_FORMAT_SERVER)
-                                .resolve(configuration.profile + ".nxdl.xml"));
+                                .resolve("template.nxdl.xml"));
 
         executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
     }
