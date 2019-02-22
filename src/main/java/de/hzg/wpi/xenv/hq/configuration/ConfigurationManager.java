@@ -223,11 +223,11 @@ public class ConfigurationManager {
     }
 
     @Command(inTypeDesc =
-            "nxPath" +
-            "type[scalar|spectrum|log]" +
-            "url" +
-            "pollRate" +
-            "dataType")
+            "nxPath\n" +
+                    "type[scalar|spectrum|log]\n" +
+                    "url\n" +
+                    "pollRate\n" +
+                    "dataType\n")
     public void createDataSource(String[] params) {
         URI nxPath = URI.create(params[0]);
         Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[1]));
@@ -253,7 +253,7 @@ public class ConfigurationManager {
         configuration.removeDataSource(result);
     }
 
-    @Command
+    @Command(inTypeDesc = "username")
     public void store(String username) {
         executorService.submit(new CommitAndPushConfigurationTask(username));
     }
