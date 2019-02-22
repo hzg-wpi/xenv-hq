@@ -222,41 +222,40 @@ public class ConfigurationManager {
         this.configuration = XmlHelper.fromXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve("configuration.xml"), Configuration.class);
     }
 
-    @Command(inTypeDesc = "username" +
+    @Command(inTypeDesc =
             "nxPath" +
             "type[scalar|spectrum|log]" +
             "url" +
             "pollRate" +
             "dataType")
     public void createDataSource(String[] params) {
-        URI nxPath = URI.create(params[1]);
-        Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[2]));
-        URI src = URI.create(params[3]);
+        URI nxPath = URI.create(params[0]);
+        Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[1]));
+        URI src = URI.create(params[2]);
 
 
         DataSource result = new DataSource(
                 nxPath.toString(),
-                params[2],
+                params[1],
                 src.toString(),
-                Integer.parseInt(params[4]),
-                params[5]
+                Integer.parseInt(params[3]),
+                params[4]
         );
 
         configuration.addOrReplaceDataSource(result);
     }
 
-    @Command(inTypeDesc = "username" +
-            "nxPath")
-    public void removeDataSource(String[] params) {
+    @Command(inTypeDesc = "nxPath")
+    public void removeDataSource(String nxPath) {
         DataSource result = new DataSource();
-        result.nxPath = params[1];
+        result.nxPath = nxPath;
 
         configuration.removeDataSource(result);
     }
 
     @Command
     public void store(String username) {
-        new CommitAndPushConfigurationTask(username).run();
+        executorService.submit(new CommitAndPushConfigurationTask(username));
     }
 
     private class CommitAndPushConfigurationTask implements Runnable {

@@ -12,6 +12,8 @@ import java.nio.file.Path;
  * @since 2/22/19
  */
 public class MetaYaml {
+    private MetaYaml() {
+    }
 
     public static String toYamlString(Object yaml) {
         StringWriter writer = new StringWriter();
