@@ -67,6 +67,14 @@
 
     <target name="run-executable">
         <exec executable="./${executable}" dir="bin" failifexecutionfails="true" failonerror="true">
+            <env key="XENV_ROOT" value="${basedir}"/>
         </exec>
     </target>
+
+    <target name="kill-executable">
+        <exec executable="kill" failifexecutionfails="true" failonerror="true">
+            <arg value="${pid}"/>
+        </exec>
+    </target>
+
 </project>

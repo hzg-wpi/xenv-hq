@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tango.DeviceState;
 import org.tango.server.annotation.*;
+import org.tango.server.device.DeviceManager;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -45,7 +46,10 @@ public class ConfigurationManager {
     public static final String META_YAML = "meta.yaml";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    @DeviceManagement
+    private DeviceManager deviceManager;
+
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private final AntProject antProject = new AntProject("ant/build.xml");
 
@@ -69,6 +73,10 @@ public class ConfigurationManager {
         return Files.list(Paths.get(HeadQuarter.PROFILES_ROOT)).map(
                 path -> path.getFileName().toString()
         ).toArray(String[]::new);
+    }
+
+    public void setDeviceManager(DeviceManager deviceManager) {
+        this.deviceManager = deviceManager;
     }
 
     public String getProfile() {

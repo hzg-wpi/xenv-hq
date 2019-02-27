@@ -6,13 +6,24 @@ import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
 import de.hzg.wpi.xenv.hq.util.FilesHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
+import fr.esrf.Tango.DevFailed;
+import fr.esrf.TangoApi.DeviceProxyFactory;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.tools.ant.BuildException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.tango.DeviceState;
+import org.tango.client.ez.proxy.NoSuchCommandException;
+import org.tango.client.ez.proxy.TangoProxies;
+import org.tango.client.ez.proxy.TangoProxy;
+import org.tango.client.ez.proxy.TangoProxyException;
 import org.tango.server.annotation.*;
+import org.tango.server.device.DeviceManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,12 +38,19 @@ import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
 public class XenvManager {
     public static final String MANAGER_YML = "manager.yml";
 
+    @DeviceManagement
+    private DeviceManager deviceManager;
+
     private final Logger logger = LoggerFactory.getLogger(XenvManager.class);
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final AntProject antProject = new AntProject("ant/build.xml");
     @Attribute(isMemorized = true)
     public String profile;
     private Configuration configuration;
+
+    public void setDeviceManager(DeviceManager deviceManager) {
+        this.deviceManager = deviceManager;
+    }
 
     @Attribute
     public String[] getProfiles() throws IOException {
@@ -94,26 +112,57 @@ public class XenvManager {
 
         loadExecutable(executable);
         Runnable runnable = () -> {
+            MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
             new AntTaskExecutor("prepare-executable", antProject).run();
             new AntTaskExecutor("fetch-executable-jar", antProject).run();
             new AntTaskExecutor("run-executable", antProject).run();
 
             //TODO send event
         };
-        executorService.submit(runnable);
+        executorService.execute(runnable);
 
         return "Done.";
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
-    public String stopServer(String executable) {
-        //TODO find pid
-        //TODO kill server (use DServer?)
+    public String stopServer(String executable) throws DevFailed, NoSuchCommandException, TangoProxyException {
+        Preconditions.checkNotNull(configuration, "load configuration first!");
+
+        TangoServer tangoServer = loadExecutable(executable);
+
+        String shortClassName = ClassUtils.getShortClassName(tangoServer.main_class);
+
+        Path pidFile = Paths.get("bin")
+                .resolve(
+                        shortClassName + ".pid");
+
+        if (!Files.exists(pidFile))
+            tryToKillViaDServer(shortClassName);
+        try {
+            String pid = new String(
+                    Files.readAllBytes(
+                            pidFile));
+
+            antProject.getProject().setProperty("pid", pid);
+            new AntTaskExecutor("kill-executable", antProject).run();
+        } catch (IOException | BuildException e) {
+            logger.warn("Failed to kill executable by pid due to exception", e);
+            tryToKillViaDServer(shortClassName);
+        }
 
         return "Done.";
     }
 
-    private void loadExecutable(String executable) {
+    private void tryToKillViaDServer(String shortClassName) throws TangoProxyException, DevFailed, org.tango.client.ez.proxy.NoSuchCommandException {
+        logger.info("Trying to kill via DServer");
+
+        TangoProxy dserver = TangoProxies.newDeviceProxyWrapper(
+                DeviceProxyFactory.get("dserver/" + shortClassName + "/" + configuration.instance_name, configuration.tango_host));
+
+        dserver.executeCommand("Kill");
+    }
+
+    private TangoServer loadExecutable(String executable) {
         antProject.getProject().setProperty("executable", executable);
 
         TangoServer tangoServer;
@@ -139,10 +188,13 @@ public class XenvManager {
         antProject.getProject().setProperty("version", tangoServer.version);
         antProject.getProject().setProperty("jmx_port", tangoServer.jmx_port);
         antProject.getProject().setProperty("url", tangoServer.url);
+
+        return tangoServer;
     }
 
     private class CommitAndPushConfigurationTask implements Runnable {
         public void run() {
+            MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
             try {
                 YamlHelper.toYaml(configuration, Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML));
                 new AntTaskExecutor("commit-configuration", antProject).run();
