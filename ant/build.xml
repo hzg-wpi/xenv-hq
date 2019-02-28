@@ -77,4 +77,11 @@
         </exec>
     </target>
 
+    <target name="force-kill-executable">
+        <exec executable="kill" failifexecutionfails="true" failonerror="true">
+            <arg value="-9"/>
+            <arg value="${pid}"/>
+        </exec>
+    </target>
+
 </project>
