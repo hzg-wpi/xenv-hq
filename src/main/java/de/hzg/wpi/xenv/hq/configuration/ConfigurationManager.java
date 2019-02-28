@@ -191,6 +191,15 @@ public class ConfigurationManager {
         executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
     }
 
+    public String getPreExperimentDataCollectorLoginProperties() throws IOException {
+        return new String(
+                Files.readAllBytes(
+                        Paths.get(HeadQuarter.PROFILES_ROOT)
+                                .resolve(configuration.profile)
+                                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
+                                .resolve("login.properties")));
+    }
+
     @Attribute
     @AttributeProperties(format = "xml")
     public String getConfigurationXml() throws Exception {
