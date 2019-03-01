@@ -23,19 +23,24 @@
         <artifact.file.name>${project.currentProfile}.tar.gz</artifact.file.name>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>de.hzg.wpi.tango</groupId>
+                <artifactId>tango-server-bom</artifactId>
+                <version>10</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- test -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>de.hzg.wpi.tango</groupId>
-            <artifactId>tango-server-bom</artifactId>
-            <version>6</version>
-            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.simpleframework</groupId>
@@ -66,12 +71,30 @@
         <dependency>
             <groupId>commons-jxpath</groupId>
             <artifactId>commons-jxpath</artifactId>
-            <version>1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.21</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.tango</groupId>
+            <artifactId>ezTangORB</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>hzg.wpn</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.tango-controls</groupId>
+            <artifactId>JTangoServer</artifactId>
         </dependency>
     </dependencies>
 

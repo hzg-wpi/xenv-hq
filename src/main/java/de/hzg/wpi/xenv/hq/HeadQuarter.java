@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import de.hzg.wpi.xenv.hq.configuration.ConfigurationManager;
 import de.hzg.wpi.xenv.hq.manager.XenvManager;
 import fr.esrf.Tango.DevFailed;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tango.DeviceState;
@@ -20,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -30,6 +32,7 @@ import java.util.Properties;
 @Device
 public class HeadQuarter {
     public static final String PROFILES_ROOT = "configuration/profiles";
+    public static final String[] XENV_EXECUTABLES = {"camel_integration", "data_format_server", "status_server", "predator"};
 
     private final Logger logger = LoggerFactory.getLogger(HeadQuarter.class);
 
@@ -65,13 +68,27 @@ public class HeadQuarter {
     }
 
     @Command
+    @StateMachine(deniedStates = DeviceState.RUNNING)
+    public void clearAll() {
+        Arrays.stream(new String[]{"bin", "etc", "logs", "var"}).forEach(s -> {
+            try {
+                FileUtils.deleteDirectory(Paths.get(s).toFile());
+            } catch (IOException e) {
+                logger.error("Failed to stop StatusServer configuration");
+                setState(DeviceState.FAULT);
+            }
+        });
+
+    }
+
+    @Command
     public void load(String profile) {
         xenvManagers.forEach(xenvManager -> {
             try {
                 xenvManager.setProfile(profile);
                 xenvManager.load();
             } catch (IOException e) {
-                logger.error("Failed to stop StatusServer configuration");
+                logger.error("XenvManager failed to load configuration");
                 setState(DeviceState.FAULT);
             }
         });
@@ -81,26 +98,60 @@ public class HeadQuarter {
                 configurationManager.setProfile(profile);
                 configurationManager.load();
             } catch (Exception e) {
-                logger.error("Failed to write StatusServer configuration");
+                logger.error("ConfigManager failed to load configuration");
                 setState(DeviceState.FAULT);
             }
         });
         logger.trace("Done.");
     }
 
-    @Command
-    public void restartStatusServer() {
-        xenvManagers.forEach(xenvManager -> {
-            try {
-                xenvManager.stopServer("status_server");
-            } catch (DevFailed devFailed) {
-                DevFailedUtils.logDevFailed(devFailed, logger);
-            } catch (NoSuchCommandException | TangoProxyException e) {
-                logger.error("Failed to stop StatusServer configuration");
-                setState(DeviceState.FAULT);
-            }
-        });
+    @Attribute
+    public String[] getXenvExecutables() {
+        return XENV_EXECUTABLES;
+    }
 
+    @Command
+    @StateMachine(endState = DeviceState.RUNNING)
+    public void startAll() {
+        Arrays.stream(XENV_EXECUTABLES)
+                .flatMap(s -> xenvManagers.stream().map(xenvManager -> (Runnable) () -> {
+                    xenvManager.startServer(s);
+                }))
+                .forEach(Runnable::run);
+    }
+
+    @Command
+    @StateMachine(endState = DeviceState.ON)
+    public void stopAll() {
+        Arrays.stream(XENV_EXECUTABLES)
+                .flatMap(s -> xenvManagers.stream().map(xenvManager -> (Runnable) () -> {
+                    try {
+                        xenvManager.stopServer(s);
+                    } catch (DevFailed devFailed) {
+                        DevFailedUtils.logDevFailed(devFailed, logger);
+                    } catch (NoSuchCommandException | TangoProxyException e) {
+                        logger.error(String.format("Failed to stop %s", s));
+                    }
+                }))
+                .forEach(Runnable::run);
+    }
+
+    @Command
+    @StateMachine(endState = DeviceState.RUNNING)
+    public void restartAll() {
+        stopAll();
+
+        updateStatusServerConfiguration();
+        updateDataFormatServerConfiguration();
+        updateCamelIntegrationConfiguration();
+        updatePreExperimentDataCollectorConfiguration();
+
+        startAll();
+    }
+
+    @Command
+    @StateMachine(deniedStates = DeviceState.RUNNING)
+    public void updateStatusServerConfiguration() {
         configurationManagers.forEach(configurationManager -> {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/StatusServer"));
@@ -113,24 +164,11 @@ public class HeadQuarter {
             }
 
         });
-
-        xenvManagers.forEach(xenvManager -> xenvManager.startServer("status_server"));
-        logger.trace("Done.");
     }
 
     @Command
-    public void restartDataFormatServer() {
-        xenvManagers.forEach(xenvManager -> {
-            try {
-                xenvManager.stopServer("data_format_server");
-            } catch (DevFailed devFailed) {
-                DevFailedUtils.logDevFailed(devFailed, logger);
-            } catch (NoSuchCommandException | TangoProxyException e) {
-                logger.error("Failed to stop DataFormatServer");
-                setState(DeviceState.FAULT);
-            }
-        });
-
+    @StateMachine(deniedStates = DeviceState.RUNNING)
+    public void updateDataFormatServerConfiguration() {
         configurationManagers.forEach(configurationManager -> {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/DataFormatServer"));
@@ -147,24 +185,11 @@ public class HeadQuarter {
             }
 
         });
-
-        xenvManagers.forEach(xenvManager -> xenvManager.startServer("data_format_server"));
-        logger.trace("Done.");
     }
 
     @Command
-    public void restartCamelIntegration() {
-        xenvManagers.forEach(xenvManager -> {
-            try {
-                xenvManager.stopServer("camel_integration");
-            } catch (DevFailed devFailed) {
-                DevFailedUtils.logDevFailed(devFailed, logger);
-            } catch (NoSuchCommandException | TangoProxyException e) {
-                logger.error("Failed to stop DataFormatServer");
-                setState(DeviceState.FAULT);
-            }
-        });
-
+    @StateMachine(deniedStates = DeviceState.RUNNING)
+    public void updateCamelIntegrationConfiguration() {
         configurationManagers.forEach(configurationManager -> {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/CamelIntegration"));
@@ -177,25 +202,11 @@ public class HeadQuarter {
             }
 
         });
-
-        xenvManagers.forEach(xenvManager -> xenvManager.startServer("camel_integration"));
-        logger.trace("Done.");
     }
 
     @Command
-    public void restartPreExperimentDataCollector() {
-        xenvManagers.forEach(xenvManager -> {
-            try {
-                xenvManager.stopServer("predator");
-            } catch (DevFailed devFailed) {
-                DevFailedUtils.logDevFailed(devFailed, logger);
-                setState(DeviceState.FAULT);
-            } catch (NoSuchCommandException | TangoProxyException e) {
-                logger.error("Failed to stop DataFormatServer");
-                setState(DeviceState.FAULT);
-            }
-        });
-
+    @StateMachine(deniedStates = DeviceState.RUNNING)
+    public void updatePreExperimentDataCollectorConfiguration() {
         configurationManagers.forEach(configurationManager -> {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/PreExperimentDataCollector"));
@@ -212,6 +223,84 @@ public class HeadQuarter {
             }
 
         });
+    }
+
+    @Command
+    @StateMachine(endState = DeviceState.RUNNING)
+    public void restartStatusServer() {
+        xenvManagers.forEach(xenvManager -> {
+            try {
+                xenvManager.stopServer("status_server");
+            } catch (DevFailed devFailed) {
+                DevFailedUtils.logDevFailed(devFailed, logger);
+            } catch (NoSuchCommandException | TangoProxyException e) {
+                logger.error("Failed to stop StatusServer configuration");
+                setState(DeviceState.FAULT);
+            }
+        });
+
+        updateStatusServerConfiguration();
+
+        xenvManagers.forEach(xenvManager -> xenvManager.startServer("status_server"));
+        logger.trace("Done.");
+    }
+
+    @Command
+    @StateMachine(endState = DeviceState.RUNNING)
+    public void restartDataFormatServer() {
+        xenvManagers.forEach(xenvManager -> {
+            try {
+                xenvManager.stopServer("data_format_server");
+            } catch (DevFailed devFailed) {
+                DevFailedUtils.logDevFailed(devFailed, logger);
+            } catch (NoSuchCommandException | TangoProxyException e) {
+                logger.error("Failed to stop DataFormatServer");
+                setState(DeviceState.FAULT);
+            }
+        });
+
+        updateDataFormatServerConfiguration();
+
+        xenvManagers.forEach(xenvManager -> xenvManager.startServer("data_format_server"));
+        logger.trace("Done.");
+    }
+
+    @Command
+    @StateMachine(endState = DeviceState.RUNNING)
+    public void restartCamelIntegration() {
+        xenvManagers.forEach(xenvManager -> {
+            try {
+                xenvManager.stopServer("camel_integration");
+            } catch (DevFailed devFailed) {
+                DevFailedUtils.logDevFailed(devFailed, logger);
+            } catch (NoSuchCommandException | TangoProxyException e) {
+                logger.error("Failed to stop DataFormatServer");
+                setState(DeviceState.FAULT);
+            }
+        });
+
+        updateCamelIntegrationConfiguration();
+
+        xenvManagers.forEach(xenvManager -> xenvManager.startServer("camel_integration"));
+        logger.trace("Done.");
+    }
+
+    @Command
+    @StateMachine(endState = DeviceState.RUNNING)
+    public void restartPreExperimentDataCollector() {
+        xenvManagers.forEach(xenvManager -> {
+            try {
+                xenvManager.stopServer("predator");
+            } catch (DevFailed devFailed) {
+                DevFailedUtils.logDevFailed(devFailed, logger);
+                setState(DeviceState.FAULT);
+            } catch (NoSuchCommandException | TangoProxyException e) {
+                logger.error("Failed to stop DataFormatServer");
+                setState(DeviceState.FAULT);
+            }
+        });
+
+        updatePreExperimentDataCollectorConfiguration();
 
         xenvManagers.forEach(xenvManager -> xenvManager.startServer("predator"));
         logger.trace("Done.");
