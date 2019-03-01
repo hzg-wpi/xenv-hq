@@ -42,7 +42,7 @@ public class StatusServerXmlGenerator implements Callable<StatusServerXml> {
 
     private StatusServerDevice getDevice(JxPath jxPath, JXPathContext jxPathContext) {
         try {
-            return (StatusServerDevice) jxPathContext.getValue("/devices[url='" + jxPath.src.toString() + "']");
+            return (StatusServerDevice) jxPathContext.getValue("/devices[url='" + jxPath.src.toString().replaceAll("/$", "") + "']");
         } catch (JXPathNotFoundException e) {
             StatusServerDevice device = new StatusServerDevice();
 
