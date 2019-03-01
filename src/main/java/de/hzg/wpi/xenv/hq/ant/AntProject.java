@@ -19,6 +19,7 @@ public class AntProject {
         File buildFile = new File(file);
 
         Project p = new Project();
+        p.setBasedir(System.getProperty("user.dir"));
         p.setUserProperty("ant.file", buildFile.getAbsolutePath());
         p.setSystemProperties();
         p.init();

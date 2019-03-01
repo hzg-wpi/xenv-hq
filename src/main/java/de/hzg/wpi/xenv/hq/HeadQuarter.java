@@ -56,13 +56,15 @@ public class HeadQuarter {
     }
 
     private static void createTempDirectory() throws IOException {
-        String result = Files.createTempDirectory("hq_").toAbsolutePath().toString();
+        Path tmpDir = Files.createTempDirectory("hq_").toAbsolutePath();
+        String result = tmpDir.toString();
         System.setProperty(XENV_HQ_TMP_DIR, result);
+        FileUtils.forceDeleteOnExit(tmpDir.toFile());
     }
 
     private static void extractResources() throws IOException {
         Files.copy(
-                HeadQuarter.class.getClassLoader().getResourceAsStream("/ant/build.xml"),
+                HeadQuarter.class.getClassLoader().getResourceAsStream("ant/build.xml"),
                 Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("build.xml"),
                 StandardCopyOption.REPLACE_EXISTING);
     }
