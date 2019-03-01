@@ -59,6 +59,7 @@
                 <filter token="LOG_LEVEL" value="${log_level}"/>
             </filterset>
         </copy>
+        <chmod file="bin/${executable}" perm="755"/>
     </target>
 
     <target name="fetch-executable-jar">
