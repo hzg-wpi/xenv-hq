@@ -23,7 +23,7 @@ public class DataSourceToAttributeConverter implements Callable<StatusServerAttr
         StatusServerXmlGenerator.JxPath jxPath = new StatusServerXmlGenerator.JxPath(URI.create(dataSource.src));
         result.name = jxPath.getName();
         result.alias = jxPath.getName();
-        result.method = "poll";
+        result.method = dataSource.pollRate == 0 ? "event" : "poll";
         result.delay = dataSource.pollRate;
         result.interpolation = "last";
         result.type = "change";

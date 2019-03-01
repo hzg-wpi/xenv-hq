@@ -43,7 +43,6 @@ public class XenvManager {
 
     private final Logger logger = LoggerFactory.getLogger(XenvManager.class);
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private final AntProject antProject = new AntProject("ant/build.xml");
     @Attribute(isMemorized = true)
     public String profile;
     private Configuration configuration;
@@ -99,20 +98,21 @@ public class XenvManager {
                         .resolve(profile)
                         .resolve(MANAGER_YML));
 
-        antProject.getProject().setProperty("tango_host", configuration.tango_host);
-        antProject.getProject().setProperty("instance_name", configuration.instance_name);
-        antProject.getProject().setProperty("tine_home", configuration.tine_home);
-        antProject.getProject().setProperty("log_home", configuration.log_home);
-        antProject.getProject().setProperty("log_level", configuration.log_level);
+
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
     public String startServer(String executable) {
         Preconditions.checkNotNull(configuration, "load configuration first!");
 
-        loadExecutable(executable);
+
         Runnable runnable = () -> {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
+
+            AntProject antProject = new AntProject("ant/build.xml");
+
+            populateAntProjectWithProperties(configuration, executable, antProject);
+
             new AntTaskExecutor("prepare-executable", antProject).run();
             new AntTaskExecutor("fetch-executable-jar", antProject).run();
             new AntTaskExecutor("run-executable", antProject).run();
@@ -128,7 +128,9 @@ public class XenvManager {
     public String stopServer(String executable) throws DevFailed, NoSuchCommandException, TangoProxyException {
         Preconditions.checkNotNull(configuration, "load configuration first!");
 
-        TangoServer tangoServer = loadExecutable(executable);
+        AntProject antProject = new AntProject("ant/build.xml");
+
+        TangoServer tangoServer = populateAntProjectWithProperties(configuration, executable, antProject);
 
         String shortClassName = ClassUtils.getShortClassName(tangoServer.main_class);
 
@@ -162,7 +164,12 @@ public class XenvManager {
         dserver.executeCommand("Kill");
     }
 
-    private TangoServer loadExecutable(String executable) {
+    private TangoServer populateAntProjectWithProperties(Configuration configuration, String executable, AntProject antProject) {
+        antProject.getProject().setProperty("tango_host", configuration.tango_host);
+        antProject.getProject().setProperty("instance_name", configuration.instance_name);
+        antProject.getProject().setProperty("tine_home", configuration.tine_home);
+        antProject.getProject().setProperty("log_home", configuration.log_home);
+        antProject.getProject().setProperty("log_level", configuration.log_level);
         antProject.getProject().setProperty("executable", executable);
 
         TangoServer tangoServer;
@@ -197,6 +204,7 @@ public class XenvManager {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
             try {
                 YamlHelper.toYaml(configuration, Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML));
+                AntProject antProject = new AntProject("ant/build.xml");
                 new AntTaskExecutor("commit-configuration", antProject).run();
                 new AntTaskExecutor("push-configuration", antProject).run();
             } catch (Exception e) {

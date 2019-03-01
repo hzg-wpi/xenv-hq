@@ -69,16 +69,17 @@ public class HeadQuarter {
 
     @Command
     @StateMachine(deniedStates = DeviceState.RUNNING)
-    public void clearAll() {
+    public void clearAll() throws IOException {
         Arrays.stream(new String[]{"bin", "etc", "logs", "var"}).forEach(s -> {
             try {
                 FileUtils.deleteDirectory(Paths.get(s).toFile());
             } catch (IOException e) {
                 logger.error("Failed to stop StatusServer configuration");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
         });
 
+        Files.createDirectory(Paths.get("logs"));
     }
 
     @Command
@@ -89,7 +90,7 @@ public class HeadQuarter {
                 xenvManager.load();
             } catch (IOException e) {
                 logger.error("XenvManager failed to load configuration");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
         });
 
@@ -99,7 +100,7 @@ public class HeadQuarter {
                 configurationManager.load();
             } catch (Exception e) {
                 logger.error("ConfigManager failed to load configuration");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
         });
         logger.trace("Done.");
@@ -138,14 +139,19 @@ public class HeadQuarter {
 
     @Command
     @StateMachine(endState = DeviceState.RUNNING)
-    public void restartAll() {
-        stopAll();
-
+    public void updateAll() {
         updateStatusServerConfiguration();
         updateDataFormatServerConfiguration();
         updateCamelIntegrationConfiguration();
         updatePreExperimentDataCollectorConfiguration();
+    }
 
+
+    @Command
+    @StateMachine(endState = DeviceState.RUNNING)
+    public void restartAll() {
+        stopAll();
+        updateAll();
         startAll();
     }
 
@@ -160,7 +166,7 @@ public class HeadQuarter {
                         .write(configurationManager.getStatusServerXml().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write StatusServer configuration");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
 
         });
@@ -173,7 +179,7 @@ public class HeadQuarter {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/DataFormatServer"));
                 Files.newOutputStream(
-                        conf.resolve(ServerManager.getInstance().getInstanceName() + ".nxdl.xml"), StandardOpenOption.CREATE)
+                        conf.resolve(configurationManager.profile + ".nxdl.xml"), StandardOpenOption.CREATE)
                         .write(configurationManager.getNexusFile().getBytes());
 
                 Files.newOutputStream(
@@ -181,7 +187,7 @@ public class HeadQuarter {
                         .write(configurationManager.getNexusMapping().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write DataFormatServer configuration");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
 
         });
@@ -198,7 +204,7 @@ public class HeadQuarter {
                         .write(configurationManager.getCamelRoutes().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write DataFormatServer configuration");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
 
         });
@@ -218,8 +224,8 @@ public class HeadQuarter {
                         conf.resolve("login.properties"), StandardOpenOption.CREATE)
                         .write(configurationManager.getPreExperimentDataCollectorLoginProperties().getBytes());
             } catch (Exception e) {
-                logger.error("Failed to write DataFormatServer configuration");
-                setState(DeviceState.FAULT);
+                logger.error("Failed to write PreExperimentDataCollector configuration");
+                setState(DeviceState.ALARM);
             }
 
         });
@@ -235,7 +241,7 @@ public class HeadQuarter {
                 DevFailedUtils.logDevFailed(devFailed, logger);
             } catch (NoSuchCommandException | TangoProxyException e) {
                 logger.error("Failed to stop StatusServer configuration");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
         });
 
@@ -255,7 +261,7 @@ public class HeadQuarter {
                 DevFailedUtils.logDevFailed(devFailed, logger);
             } catch (NoSuchCommandException | TangoProxyException e) {
                 logger.error("Failed to stop DataFormatServer");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
         });
 
@@ -275,7 +281,7 @@ public class HeadQuarter {
                 DevFailedUtils.logDevFailed(devFailed, logger);
             } catch (NoSuchCommandException | TangoProxyException e) {
                 logger.error("Failed to stop DataFormatServer");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
         });
 
@@ -293,10 +299,10 @@ public class HeadQuarter {
                 xenvManager.stopServer("predator");
             } catch (DevFailed devFailed) {
                 DevFailedUtils.logDevFailed(devFailed, logger);
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             } catch (NoSuchCommandException | TangoProxyException e) {
                 logger.error("Failed to stop DataFormatServer");
-                setState(DeviceState.FAULT);
+                setState(DeviceState.ALARM);
             }
         });
 
