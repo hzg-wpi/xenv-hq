@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
+import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -109,7 +110,7 @@ public class XenvManager {
         Runnable runnable = () -> {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
 
-            AntProject antProject = new AntProject("ant/build.xml");
+            AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "ant/build.xml");
 
             populateAntProjectWithProperties(configuration, executable, antProject);
 
@@ -128,7 +129,7 @@ public class XenvManager {
     public String stopServer(String executable) throws DevFailed, NoSuchCommandException, TangoProxyException {
         Preconditions.checkNotNull(configuration, "load configuration first!");
 
-        AntProject antProject = new AntProject("ant/build.xml");
+        AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "ant/build.xml");
 
         TangoServer tangoServer = populateAntProjectWithProperties(configuration, executable, antProject);
 
@@ -204,7 +205,7 @@ public class XenvManager {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
             try {
                 YamlHelper.toYaml(configuration, Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML));
-                AntProject antProject = new AntProject("ant/build.xml");
+                AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "ant/build.xml");
                 new AntTaskExecutor("commit-configuration", antProject).run();
                 new AntTaskExecutor("push-configuration", antProject).run();
             } catch (Exception e) {

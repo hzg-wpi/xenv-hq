@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
+import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
+
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 2/19/19
@@ -51,7 +53,7 @@ public class ConfigurationManager {
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    private final AntProject antProject = new AntProject("ant/build.xml");
+    private final AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
 
     Configuration configuration;
     @Attribute(isMemorized = true)

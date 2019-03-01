@@ -31,7 +31,7 @@ public class AntTaskExecutorTest {
 
     @Test
     public void executeDummy() {
-        AntProject project = new AntProject("ant/build.xml");
+        AntProject project = new AntProject("src/main/resources/ant/build.xml");
 
         AntTaskExecutor instance = new AntTaskExecutor("dummy", project);
         instance.run();
@@ -39,7 +39,7 @@ public class AntTaskExecutorTest {
 
     @Test
     public void a_executeFetchConfiguration() {
-        AntProject project = new AntProject("ant/build.xml");
+        AntProject project = new AntProject("src/main/resources/ant/build.xml");
 
         AntTaskExecutor instance = new AntTaskExecutor("clone-configuration", project);
         instance.run();
@@ -47,7 +47,7 @@ public class AntTaskExecutorTest {
 
     @Test
     public void b_executeCommitConfiguration() {
-        AntProject project = new AntProject("ant/build.xml");
+        AntProject project = new AntProject("src/main/resources/ant/build.xml");
 
         AntTaskExecutor instance = new AntTaskExecutor("commit-configuration", project);
         instance.run();
@@ -55,7 +55,7 @@ public class AntTaskExecutorTest {
 
     @Test
     public void c_executePushConfiguration() {
-        AntProject project = new AntProject("ant/build.xml");
+        AntProject project = new AntProject("src/main/resources/ant/build.xml");
 
         AntTaskExecutor instance = new AntTaskExecutor("push-configuration", project);
         instance.run();

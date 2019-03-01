@@ -5,23 +5,31 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.hzg.wpi.xenv</groupId>
-    <artifactId>xenv-hq</artifactId>
+    <artifactId>HeadQuarter</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
+    <developers>
+        <developer>
+            <name>Igor Khokhriakov</name>
+            <email>igor.khokhriakov@hzg.de</email>
+            <organization>Helmholtz-Zentrum Geesthacht</organization>
+            <organizationUrl>hzg.de</organizationUrl>
+        </developer>
+    </developers>
+
     <properties>
-        <!-- TODO move into a file -->
-        <StatusServer.version>2.1.3</StatusServer.version>
-        <!--<DataFormatAdapter.version>3.10</DataFormatAdapter.version>-->
-        <CamelIntegration.version>0.3</CamelIntegration.version>
-        <DataFormatServer.version>3.6</DataFormatServer.version>
-        <PreExperimentDataCollector.version>3.0.5</PreExperimentDataCollector.version>
-        <!-- other -->
-        <xenv.root>${project.build.directory}${file.separator}${project.currentProfile}</xenv.root>
-        <build.directory>${build.directory}</build.directory>
-        <artifact.file.full_path>${build.directory}${file.separator}${project.currentProfile}.tar.gz</artifact.file.full_path>
-        <artifact.file.name>${project.currentProfile}.tar.gz</artifact.file.name>
+        <github.organization>hzg-wpi</github.organization>
+        <github.repo>xenv-hq</github.repo>
     </properties>
+
+    <scm>
+        <connection>scm:git:git@github.com:${github.organization}/${github.repo}.git</connection>
+        <developerConnection>scm:git:git@github.com:${github.organization}/${github.repo}.git</developerConnection>
+        <url>https://github.com/hzg-wpi/${github.repo}</url>
+        <tag>HEAD</tag>
+    </scm>
+
 
     <dependencyManagement>
         <dependencies>
@@ -131,8 +139,86 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>jar-distribution</id>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <archive>
+                                <manifest>
+                                    <mainClass>
+                                        org.baeldung.executable.ExecutableMavenJar
+                                    </mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <localCheckout>true</localCheckout>
+                    <useReleaseProfile>true</useReleaseProfile>
+                    <releaseProfiles>release</releaseProfiles>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>de.jutzig</groupId>
+                        <artifactId>github-release-plugin</artifactId>
+                        <version>1.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>release</id>
+                                <goals>
+                                    <goal>release</goal>
+                                </goals>
+                                <phase>
+                                    deploy
+                                </phase>
+                                <configuration>
+                                    <description>Automated release preformed by maven plugin</description>
+                                    <releaseName>${project.artifactId}-${project.version}</releaseName>
+                                    <tag>${project.artifactId}-${project.version}</tag>
+                                    <fileSets>
+                                        <fileSet>
+                                            <directory>${project.build.directory}</directory>
+                                            <includes>
+                                                <include>${project.build.finalName}</include>
+                                            </includes>
+                                        </fileSet>
+                                    </fileSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <repositories>
         <repository>

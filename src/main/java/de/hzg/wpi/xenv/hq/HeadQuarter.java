@@ -17,10 +17,7 @@ import org.tango.server.device.DeviceManager;
 import org.tango.utils.DevFailedUtils;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -33,6 +30,7 @@ import java.util.Properties;
 public class HeadQuarter {
     public static final String PROFILES_ROOT = "configuration/profiles";
     public static final String[] XENV_EXECUTABLES = {"camel_integration", "data_format_server", "status_server", "predator"};
+    public static final String XENV_HQ_TMP_DIR = "xenv.hq.tmp.dir";
 
     private final Logger logger = LoggerFactory.getLogger(HeadQuarter.class);
 
@@ -44,6 +42,8 @@ public class HeadQuarter {
     private List<ConfigurationManager> configurationManagers;
 
     public static void main(String[] args) throws IOException {
+        createTempDirectory();
+        extractResources();
         setSystemProperties();
 
         ServerManager.getInstance().addClass("ConfigurationManager", ConfigurationManager.class);
@@ -53,6 +53,18 @@ public class HeadQuarter {
         ServerManager.getInstance().start(args, HeadQuarter.class.getSimpleName());
         ServerManagerUtils.writePidFile(
                 Paths.get(System.getProperty("xenv.hq.pidFile", System.getProperty("user.dir"))));
+    }
+
+    private static void createTempDirectory() throws IOException {
+        String result = Files.createTempDirectory("hq_").toAbsolutePath().toString();
+        System.setProperty(XENV_HQ_TMP_DIR, result);
+    }
+
+    private static void extractResources() throws IOException {
+        Files.copy(
+                HeadQuarter.class.getClassLoader().getResourceAsStream("/ant/build.xml"),
+                Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("build.xml"),
+                StandardCopyOption.REPLACE_EXISTING);
     }
 
     @Init
