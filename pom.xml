@@ -139,7 +139,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        org.baeldung.executable.ExecutableMavenJar
+                                        de.hzg.wpi.xenv.hq.HeadQuarter
                                     </mainClass>
                                 </manifest>
                             </archive>
