@@ -51,6 +51,8 @@ public class HeadQuarter {
         ServerManager.getInstance().addClass("HeadQuarter", HeadQuarter.class);
 
         ServerManager.getInstance().start(args, HeadQuarter.class.getSimpleName());
+        ServerManagerUtils.writePidFile(
+                Paths.get(System.getProperty("xenv.hq.pidFile", System.getProperty("user.dir"))));
     }
 
     @Init
