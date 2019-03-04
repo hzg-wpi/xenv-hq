@@ -63,7 +63,7 @@
     </target>
 
     <target name="fetch-executable-jar">
-        <get src="${url}" dest="bin/${server_name}-${version}.jar" skipexisting="true"/>
+        <get src="${url}/${server_name}-${version}.jar" dest="bin/${server_name}-${version}.jar" skipexisting="true"/>
     </target>
 
     <target name="run-executable">
