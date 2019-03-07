@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +32,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
+import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
 import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
+import static de.hzg.wpi.xenv.hq.manager.XenvManager.MANAGER_YML;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -55,7 +58,7 @@ public class ConfigurationManager {
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    private final AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
+    private final AntProject antProject = new AntProject(getAntRoot() + "/build.xml");
 
     Configuration configuration;
     @Attribute(isMemorized = true)
@@ -280,9 +283,50 @@ public class ConfigurationManager {
         executorService.submit(new CommitAndPushConfigurationTask(username));
     }
 
+    private static String getAntRoot() {
+        return System.getProperty(XENV_HQ_TMP_DIR, "src/main/resources/ant");
+    }
+
     @Command(inTypeDesc = "profile")
     public void createProfile(String profile) throws Exception {
-        //TODO
+        Path profilePath = Paths.get(PROFILES_ROOT).resolve(profile);
+        Preconditions.checkState(Files.notExists(profilePath), String.format("Profile %s already exists!", profile));
+
+        Files.createDirectory(profilePath);
+
+        executeAnt(profile, "copy-profile");
+
+        executeAnt(profile, "add-profile");
+
+        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
+    }
+
+    @Command(inTypeDesc = "profile")
+    public void deleteProfile(String profile) throws Exception {
+        Path profilePath = Paths.get(PROFILES_ROOT).resolve(profile);
+        Preconditions.checkState(Files.exists(profilePath), String.format("Profile %s must exists!", profile));
+
+        executeAnt(profile, "remove-profile");
+
+        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
+    }
+
+    void executeAnt(String profile, String s) throws IOException {
+        AntProject project = new AntProject(getAntRoot() + "/build.xml");
+
+        setProfileProperties(profile, project);
+
+        new AntTaskExecutor(s, project).run();
+    }
+
+    private void setProfileProperties(String profile, AntProject project) throws IOException {
+        de.hzg.wpi.xenv.hq.manager.Configuration manager = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve(this.profile).resolve(MANAGER_YML), de.hzg.wpi.xenv.hq.manager.Configuration.class);
+        project.getProject().setBasedir(Paths.get(PROFILES_ROOT).getParent().toAbsolutePath().toString());
+        project.getProject().setProperty("profile", profile);
+
+        project.getProject().setProperty("tango_host", manager.tango_host);
+        project.getProject().setProperty("instance_name", manager.instance_name);
+        project.getProject().setProperty("tine_home", manager.tine_home);
     }
 
     private class CommitAndPushConfigurationTask implements Runnable {
