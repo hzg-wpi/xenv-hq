@@ -18,21 +18,21 @@ public class YamlHelperIT {
     public void fromString() {
         Object result = YamlHelper.fromString("- name: Fieldset form example\n" +
                 "  id: frmFieldset\n" +
-                "  type: fieldset");
+                "  type: fieldset", Object.class);
 
 
     }
 
     @Test
     public void test() throws IOException {
-        Object result = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve("test/PreExperimentDataCollector/meta.yaml"));
+        Object result = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve("test/PreExperimentDataCollector/meta.yaml"), Object.class);
 
         System.out.println(YamlHelper.toYamlString(result));
     }
 
     @Test
     public void test_manager() throws IOException {
-        Configuration result = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve("test/manager.yml"));
+        Configuration result = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve("test/manager.yml"), Configuration.class);
 
         System.out.println(YamlHelper.toYamlString(result));
     }

@@ -46,6 +46,8 @@ public class ConfigurationManager {
     public static final String TEMPLATE_NXDL_XML = "template.nxdl.xml";
     public static final String PRE_EXPERIMENT_DATA_COLLECTOR = "PreExperimentDataCollector";
     public static final String META_YAML = "meta.yaml";
+    public static final String CONFIGURATION_XML = "configuration.xml";
+    public static final String LOGIN_PROPERTIES = "login.properties";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
     @DeviceManagement
@@ -179,12 +181,12 @@ public class ConfigurationManager {
                 Paths.get(HeadQuarter.PROFILES_ROOT)
                         .resolve(configuration.profile)
                         .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
-                        .resolve(META_YAML));
+                        .resolve(META_YAML), Object.class);
         return YamlHelper.toYamlString(yaml);
     }
 
     public void setPreExperimentDataCollectorYaml(String yamlString) throws Exception {
-        Object yaml = YamlHelper.fromString(yamlString);
+        Object yaml = YamlHelper.fromString(yamlString, Object.class);
         YamlHelper.toYaml(yaml, Paths.get(HeadQuarter.PROFILES_ROOT)
                 .resolve(configuration.profile)
                 .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
@@ -276,6 +278,11 @@ public class ConfigurationManager {
     @Command(inTypeDesc = "username")
     public void store(String username) {
         executorService.submit(new CommitAndPushConfigurationTask(username));
+    }
+
+    @Command(inTypeDesc = "profile")
+    public void createProfile(String profile) throws Exception {
+        //TODO
     }
 
     private class CommitAndPushConfigurationTask implements Runnable {

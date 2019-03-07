@@ -20,6 +20,8 @@ import org.tango.client.ez.proxy.TangoProxy;
 import org.tango.client.ez.proxy.TangoProxyException;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,6 +49,8 @@ public class XenvManager {
     @Attribute(isMemorized = true)
     public String profile;
     private Configuration configuration;
+
+    private TangoServers servers;
 
     public void setDeviceManager(DeviceManager deviceManager) {
         this.deviceManager = deviceManager;
@@ -76,28 +80,33 @@ public class XenvManager {
 
     @Attribute
     public void setConfiguration(String yaml) {
-        configuration = YamlHelper.fromString(yaml);
+        configuration = YamlHelper.fromString(yaml, Configuration.class);
 
         executorService.submit(
                 new CommitAndPushConfigurationTask());
     }
 
     @Init
-    @StateMachine(endState = DeviceState.ON)
+    @StateMachine(endState = DeviceState.STANDBY)
     public void init() throws IOException {
         FilesHelper.createIfNotExists("bin");
         FilesHelper.createIfNotExists("logs");
         FilesHelper.createIfNotExists("etc");
+
+        Yaml yaml = new Yaml(new Constructor(TangoServers.class));
+
+        servers = yaml.load(Files.newBufferedReader(Paths.get("configuration/etc/xenv-servers.yml")));
     }
 
     @Command
+    @StateMachine(endState = DeviceState.ON)
     public void load() throws IOException {
         Preconditions.checkNotNull(profile, "Set profile first!");
 
         configuration = YamlHelper.fromYamlFile(
                 Paths.get(PROFILES_ROOT)
                         .resolve(profile)
-                        .resolve(MANAGER_YML));
+                        .resolve(MANAGER_YML), Configuration.class);
 
 
     }
@@ -176,16 +185,16 @@ public class XenvManager {
         TangoServer tangoServer;
         switch (executable) {
             case "status_server":
-                tangoServer = configuration.status_server;
+                tangoServer = servers.status_server;
                 break;
             case "data_format_server":
-                tangoServer = configuration.data_format_server;
+                tangoServer = servers.data_format_server;
                 break;
             case "camel_integration":
-                tangoServer = configuration.camel_integration;
+                tangoServer = servers.camel_integration;
                 break;
             case "predator":
-                tangoServer = configuration.predator;
+                tangoServer = servers.predator;
                 break;
             default:
                 throw new IllegalArgumentException("Unknown executable: " + executable);

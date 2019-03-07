@@ -2,6 +2,7 @@ package de.hzg.wpi.xenv.hq.util.yaml;
 
 import com.google.common.base.Preconditions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -34,16 +35,16 @@ public class YamlHelper {
     }
 
 
-    public static <T> T fromString(String yaml) {
-        Yaml parser = new Yaml();
+    public static <T> T fromString(String yaml, Class<T> clazz) {
+        Yaml parser = new Yaml(new Constructor(clazz));
 
         return parser.<T>load(yaml);
     }
 
-    public static <T> T fromYamlFile(Path path) throws IOException {
+    public static <T> T fromYamlFile(Path path, Class<T> clazz) throws IOException {
         Preconditions.checkArgument(Files.exists(path));
 
-        Yaml parser = new Yaml();
+        Yaml parser = new Yaml(new Constructor(clazz));
 
         return parser.load(Files.newBufferedReader(path));
     }

@@ -5,6 +5,7 @@ import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Namespace;
 import org.simpleframework.xml.Root;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -15,5 +16,5 @@ import java.util.List;
 @Namespace(reference = "http://camel.apache.org/schema/spring")
 public class CamelRoutesXml implements Xml {
     @ElementList(inline = true)
-    public List<CamelRoute> routes;
+    public List<CamelRoute> routes = new ArrayList<>();
 }

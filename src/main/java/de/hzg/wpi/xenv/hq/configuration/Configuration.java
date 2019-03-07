@@ -5,6 +5,7 @@ import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,7 +18,7 @@ public class Configuration implements Xml {
     public String profile;
 
     @ElementList
-    public List<DataSource> dataSourceList;
+    public List<DataSource> dataSourceList = new ArrayList<>();
 
     public void addOrReplaceDataSource(DataSource result) {
         removeDataSource(result);
