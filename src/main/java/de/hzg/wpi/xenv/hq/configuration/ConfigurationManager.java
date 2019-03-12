@@ -1,6 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
 import com.google.common.base.Preconditions;
+import com.google.gson.Gson;
 import de.hzg.wpi.xenv.hq.HeadQuarter;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
@@ -210,8 +211,19 @@ public class ConfigurationManager {
     @Attribute
     @AttributeProperties(format = "xml")
     public String getConfigurationXml() throws Exception {
+        Preconditions.checkNotNull(configuration);
+
         return configuration.toXmlString();
     }
+
+    @Attribute
+    public String[] getDataSources() throws Exception {
+        Preconditions.checkNotNull(configuration);
+
+        return configuration.dataSourceList.stream()
+                .map(dataSource -> new Gson().toJson(dataSource)).toArray(String[]::new);
+    }
+
 
     @Init
     @StateMachine(endState = DeviceState.ON)
@@ -244,7 +256,7 @@ public class ConfigurationManager {
     @Command
     public void load() throws Exception {
         Preconditions.checkNotNull(profile);
-        this.configuration = XmlHelper.fromXml(Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve("configuration.xml"), Configuration.class);
+        this.configuration = XmlHelper.fromXml(Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(CONFIGURATION_XML), Configuration.class);
     }
 
     @Command(inTypeDesc =
@@ -279,7 +291,10 @@ public class ConfigurationManager {
     }
 
     @Command(inTypeDesc = "username")
-    public void store(String username) {
+    public void store(String username) throws Exception {
+        Preconditions.checkNotNull(profile);
+        configuration.toXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve(CONFIGURATION_XML));
+
         executorService.submit(new CommitAndPushConfigurationTask(username));
     }
 

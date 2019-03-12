@@ -56,7 +56,7 @@
     <target name="remove-profile">
         <exec executable="hg" failifexecutionfails="true" failonerror="true">
             <arg value="remove"/>
-            <arg value="profiles/${profile}/*"/>
+            <arg value="profiles/${profile}"/>
         </exec>
     </target>
 
