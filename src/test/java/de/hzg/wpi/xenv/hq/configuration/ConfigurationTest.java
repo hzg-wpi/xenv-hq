@@ -20,7 +20,8 @@ public class ConfigurationTest {
         instance = XmlHelper.fromString(
                 "<Configuration profile='test'>\n" +
                         "    <dataSourceList>\n" +
-                        "        <DataSource nxPath='/entry'\n" +
+                        "        <DataSource id='0'" +
+                        "                    nxPath='/entry'\n" +
                         "                    type='scalar'\n" +
                         "                    src='test/xenv/predator/name'\n" +
                         "                    pollRate='0'\n" +
@@ -49,7 +50,7 @@ public class ConfigurationTest {
 
     @Test
     public void addDataSource() {
-        instance.addOrReplaceDataSource(new DataSource("/entry/hardware/motor", "log", "test/motor/0", 200, "float32"));
+        instance.addOrReplaceDataSource(new DataSource(System.currentTimeMillis(), "/entry/hardware/motor", "log", "test/motor/0", 200, "float32"));
 
         assertEquals(2, instance.dataSourceList.size());
         assertEquals("/entry/hardware/motor", instance.dataSourceList.get(1).nxPath);
@@ -57,7 +58,7 @@ public class ConfigurationTest {
 
     @Test
     public void replaceDataSource() {
-        instance.addOrReplaceDataSource(new DataSource("/entry", "log", "test/motor/0", 200, "float32"));
+        instance.addOrReplaceDataSource(new DataSource(System.currentTimeMillis(), "/entry", "log", "test/motor/0", 200, "float32"));
 
         assertEquals(1, instance.dataSourceList.size());
         assertEquals("test/motor/0", instance.dataSourceList.get(0).src);
@@ -65,7 +66,7 @@ public class ConfigurationTest {
 
     @Test
     public void removeDataSource() {
-        instance.removeDataSource(new DataSource("/entry", "log", "test/motor/0", 200, "float32"));
+        instance.removeDataSource(new DataSource(System.currentTimeMillis(), "/entry", "log", "test/motor/0", 200, "float32"));
 
         assertTrue(instance.dataSourceList.isEmpty());
     }

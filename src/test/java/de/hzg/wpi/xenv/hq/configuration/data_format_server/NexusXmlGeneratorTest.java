@@ -33,7 +33,7 @@ public class NexusXmlGeneratorTest {
     public void generateNxLog() throws Exception {
         Configuration configuration = new Configuration();
         configuration.dataSourceList = Lists.newArrayList(
-                new DataSource("/entry/hardware/motor1/Position", "log", "tango://...", 200, "uint16")
+                new DataSource(System.currentTimeMillis(), "/entry/hardware/motor1/Position", "log", "tango://...", 200, "uint16")
         );
 
 
@@ -54,7 +54,7 @@ public class NexusXmlGeneratorTest {
     public void generateNxLog_nonExistingNxPath() throws Exception {
         Configuration configuration = new Configuration();
         configuration.dataSourceList = Lists.newArrayList(
-                new DataSource("/entry/software/motor1/Position", "log", "tango://...", 200, "uint16")
+                new DataSource(System.currentTimeMillis(), "/entry/software/motor1/Position", "log", "tango://...", 200, "uint16")
         );
 
 
@@ -75,8 +75,8 @@ public class NexusXmlGeneratorTest {
     public void generateNxLog_multiple() throws Exception {
         Configuration configuration = new Configuration();
         configuration.dataSourceList = Lists.newArrayList(
-                new DataSource("/entry/hardware/motor1/X", "log", "tango://...", 200, "uint16"),
-                new DataSource("/entry/hardware/motor1/Y", "log", "tango://...", 200, "uint16")
+                new DataSource(System.currentTimeMillis(), "/entry/hardware/motor1/X", "log", "tango://...", 200, "uint16"),
+                new DataSource(System.currentTimeMillis(), "/entry/hardware/motor1/Y", "log", "tango://...", 200, "uint16")
         );
 
 
@@ -100,7 +100,7 @@ public class NexusXmlGeneratorTest {
     public void generateNxField() throws Exception {
         Configuration configuration = new Configuration();
         configuration.dataSourceList = Lists.newArrayList(
-                new DataSource("/entry/hardware/motor1/name", "scalar", "tango://...", 200, "string")
+                new DataSource(System.currentTimeMillis(), "/entry/hardware/motor1/name", "scalar", "tango://...", 200, "string")
         );
 
 
@@ -122,7 +122,7 @@ public class NexusXmlGeneratorTest {
     public void generateNxField_dimensions() throws Exception {
         Configuration configuration = new Configuration();
         configuration.dataSourceList = Lists.newArrayList(
-                new DataSource("/entry/hardware/motor1/Position", "spectrum", "tango://...", 200, "uint16")
+                new DataSource(System.currentTimeMillis(), "/entry/hardware/motor1/Position", "spectrum", "tango://...", 200, "uint16")
         );
 
 
@@ -154,7 +154,7 @@ public class NexusXmlGeneratorTest {
 
         Configuration configuration = new Configuration();
         configuration.dataSourceList = Lists.newArrayList(
-                new DataSource("/entry/hardware/name", "scalar", "tango://...", 200, "uint16")
+                new DataSource(System.currentTimeMillis(), "/entry/hardware/name", "scalar", "tango://...", 200, "uint16")
         );
 
 

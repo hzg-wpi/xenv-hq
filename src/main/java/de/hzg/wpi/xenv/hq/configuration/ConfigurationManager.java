@@ -260,32 +260,34 @@ public class ConfigurationManager {
     }
 
     @Command(inTypeDesc =
-            "nxPath\n" +
+            "id\n" +
+                    "nxPath\n" +
                     "type[scalar|spectrum|log]\n" +
                     "url\n" +
                     "pollRate\n" +
                     "dataType\n")
     public void createDataSource(String[] params) {
-        URI nxPath = URI.create(params[0]);
-        Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[1]));
-        URI src = URI.create(params[2]);
+        URI nxPath = URI.create(params[1]);
+        Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[2]));
+        URI src = URI.create(params[3]);
 
 
         DataSource result = new DataSource(
+                Long.parseLong(params[0]),
                 nxPath.toString(),
-                params[1],
+                params[2],
                 src.toString(),
-                Integer.parseInt(params[3]),
-                params[4]
+                Integer.parseInt(params[4]),
+                params[5]
         );
 
         configuration.addOrReplaceDataSource(result);
     }
 
-    @Command(inTypeDesc = "nxPath")
-    public void removeDataSource(String nxPath) {
+    @Command(inTypeDesc = "id")
+    public void removeDataSource(long id) {
         DataSource result = new DataSource();
-        result.nxPath = nxPath;
+        result.id = id;
 
         configuration.removeDataSource(result);
     }

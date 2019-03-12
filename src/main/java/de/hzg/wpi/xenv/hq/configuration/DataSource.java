@@ -14,6 +14,8 @@ import java.util.Objects;
 @Root
 public class DataSource {
     @Attribute
+    public long id;
+    @Attribute
     public String nxPath;
     @Attribute
     public String type;
@@ -27,7 +29,8 @@ public class DataSource {
     public DataSource() {
     }
 
-    public DataSource(String nxPath, String type, String src, int pollRate, String dataType) {
+    public DataSource(long id, String nxPath, String type, String src, int pollRate, String dataType) {
+        this.id = id;
         this.nxPath = nxPath;
         this.type = type;
         this.src = src;
@@ -40,11 +43,11 @@ public class DataSource {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DataSource that = (DataSource) o;
-        return Objects.equals(nxPath, that.nxPath);
+        return id == that.id;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nxPath);
+        return Objects.hash(id);
     }
 }
