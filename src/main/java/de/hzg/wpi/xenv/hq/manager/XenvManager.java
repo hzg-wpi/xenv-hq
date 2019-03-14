@@ -79,6 +79,16 @@ public class XenvManager {
     }
 
     @Attribute
+    public String getTangoHost() {
+        return configuration.tango_host;
+    }
+
+    @Attribute
+    public String getInstanceName() {
+        return configuration.instance_name;
+    }
+
+    @Attribute
     public void setConfiguration(String yaml) {
         configuration = YamlHelper.fromString(yaml, Configuration.class);
 

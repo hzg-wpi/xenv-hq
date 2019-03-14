@@ -4,10 +4,7 @@ import com.google.common.base.Preconditions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -29,9 +26,9 @@ public class YamlHelper {
     public static void toYaml(Object yaml, Path path) throws Exception {
         Yaml serializer = new Yaml();
 
-        Writer writer = new OutputStreamWriter(Files.newOutputStream(path));
-
-        serializer.dump(yaml, writer);
+        try (Writer writer = new OutputStreamWriter(Files.newOutputStream(path))) {
+            serializer.dump(yaml, writer);
+        }
     }
 
 
@@ -46,7 +43,9 @@ public class YamlHelper {
 
         Yaml parser = new Yaml(new Constructor(clazz));
 
-        return parser.load(Files.newBufferedReader(path));
+        try (BufferedReader bufferedReader = Files.newBufferedReader(path)) {
+            return parser.load(bufferedReader);
+        }
     }
 
 }

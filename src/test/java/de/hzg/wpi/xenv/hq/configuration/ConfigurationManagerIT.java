@@ -62,7 +62,7 @@ public class ConfigurationManagerIT {
 
     @Test
     public void testCopyDefaultProfile() throws Exception {
-        String newTestProfile = "newTestProfile";
+        ConfigurationManager.Profile newTestProfile = new ConfigurationManager.Profile("newTestProfile", null, null);
 
         ConfigurationManager instance = new ConfigurationManager();
 
@@ -70,24 +70,24 @@ public class ConfigurationManagerIT {
         instance.load();
 
         instance.executeAnt(newTestProfile, "copy-profile");
-        FileUtils.forceDeleteOnExit(Paths.get(PROFILES_ROOT).resolve(newTestProfile).toFile());
+        FileUtils.forceDeleteOnExit(Paths.get(PROFILES_ROOT).resolve(newTestProfile.name).toFile());
     }
 
     @Test
     public void testCreateDeleteProfile() throws Exception {
-        String newTestProfile = "newTestProfile";
+        ConfigurationManager.Profile newTestProfile = new ConfigurationManager.Profile("newTestProfile", null, null);
 
         ConfigurationManager instance = new ConfigurationManager();
 
         instance.profile = "test";
         instance.load();
 
-        instance.createProfile(newTestProfile);
+        instance.createProfile(new String[]{newTestProfile.name, newTestProfile.tango_host, newTestProfile.instance_name});
 
         Thread.sleep(3000);
 
-        instance.deleteProfile(newTestProfile);
+        instance.deleteProfile(newTestProfile.name);
 
-        FileUtils.forceDeleteOnExit(Paths.get(PROFILES_ROOT).resolve(newTestProfile).toFile());
+        FileUtils.forceDeleteOnExit(Paths.get(PROFILES_ROOT).resolve(newTestProfile.name).toFile());
     }
 }

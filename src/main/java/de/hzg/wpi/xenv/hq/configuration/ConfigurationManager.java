@@ -304,16 +304,17 @@ public class ConfigurationManager {
         return System.getProperty(XENV_HQ_TMP_DIR, "src/main/resources/ant");
     }
 
-    @Command(inTypeDesc = "profile")
-    public void createProfile(String profile) throws Exception {
-        Path profilePath = Paths.get(PROFILES_ROOT).resolve(profile);
+    @Command(inTypeDesc = "profile|host|instance")
+    public void createProfile(String[] profile) throws Exception {
+        Path profilePath = Paths.get(PROFILES_ROOT).resolve(profile[0]);
         Preconditions.checkState(Files.notExists(profilePath), String.format("Profile %s already exists!", profile));
 
         Files.createDirectory(profilePath);
 
-        executeAnt(profile, "copy-profile");
+        Profile profile1 = new Profile(profile[0], profile[1], profile[2]);
+        executeAnt(profile1, "copy-profile");
 
-        executeAnt(profile, "add-profile");
+        executeAnt(profile1, "add-profile");
 
         executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
     }
@@ -323,12 +324,12 @@ public class ConfigurationManager {
         Path profilePath = Paths.get(PROFILES_ROOT).resolve(profile);
         Preconditions.checkState(Files.exists(profilePath), String.format("Profile %s must exists!", profile));
 
-        executeAnt(profile, "remove-profile");
+        executeAnt(new Profile(profile, null, null), "remove-profile");
 
         executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
     }
 
-    void executeAnt(String profile, String s) throws IOException {
+    void executeAnt(Profile profile, String s) throws IOException {
         AntProject project = new AntProject(getAntRoot() + "/build.xml");
 
         setProfileProperties(profile, project);
@@ -336,14 +337,26 @@ public class ConfigurationManager {
         new AntTaskExecutor(s, project).run();
     }
 
-    private void setProfileProperties(String profile, AntProject project) throws IOException {
+    private void setProfileProperties(Profile profile, AntProject project) throws IOException {
         de.hzg.wpi.xenv.hq.manager.Configuration manager = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve(this.profile).resolve(MANAGER_YML), de.hzg.wpi.xenv.hq.manager.Configuration.class);
         project.getProject().setBasedir(Paths.get(PROFILES_ROOT).getParent().toAbsolutePath().toString());
-        project.getProject().setProperty("profile", profile);
+        project.getProject().setProperty("profile", profile.name);
 
-        project.getProject().setProperty("tango_host", manager.tango_host);
-        project.getProject().setProperty("instance_name", manager.instance_name);
+        project.getProject().setProperty("tango_host", profile.tango_host);
+        project.getProject().setProperty("instance_name", profile.instance_name);
         project.getProject().setProperty("tine_home", manager.tine_home);
+    }
+
+    static class Profile {
+        String name;
+        String tango_host;
+        String instance_name;
+
+        public Profile(String name, String tango_host, String instance_name) {
+            this.name = name;
+            this.tango_host = tango_host;
+            this.instance_name = instance_name;
+        }
     }
 
     private class CommitAndPushConfigurationTask implements Runnable {
