@@ -58,7 +58,7 @@ public class ConfigurationTest {
 
     @Test
     public void replaceDataSource() {
-        instance.addOrReplaceDataSource(new DataSource(System.currentTimeMillis(), "/entry", "log", "test/motor/0", 200, "float32"));
+        instance.addOrReplaceDataSource(new DataSource(0L, "/entry", "log", "test/motor/0", 200, "float32"));
 
         assertEquals(1, instance.dataSourceList.size());
         assertEquals("test/motor/0", instance.dataSourceList.get(0).src);
@@ -66,7 +66,7 @@ public class ConfigurationTest {
 
     @Test
     public void removeDataSource() {
-        instance.removeDataSource(new DataSource(System.currentTimeMillis(), "/entry", "log", "test/motor/0", 200, "float32"));
+        instance.removeDataSource(new DataSource(0L, "/entry", "log", "test/motor/0", 200, "float32"));
 
         assertTrue(instance.dataSourceList.isEmpty());
     }
