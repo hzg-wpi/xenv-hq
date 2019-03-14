@@ -88,7 +88,6 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(deniedStates = DeviceState.RUNNING)
     public void clearAll() throws IOException {
         Arrays.stream(new String[]{"bin", "etc", "logs", "var"}).forEach(s -> {
             try {
@@ -132,17 +131,16 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(endState = DeviceState.RUNNING)
     public void startAll() {
         Arrays.stream(XENV_EXECUTABLES)
                 .flatMap(s -> xenvManagers.stream().map(xenvManager -> (Runnable) () -> {
                     xenvManager.startServer(s);
                 }))
+                .parallel()
                 .forEach(Runnable::run);
     }
 
     @Command
-    @StateMachine(endState = DeviceState.ON)
     public void stopAll() {
         Arrays.stream(XENV_EXECUTABLES)
                 .flatMap(s -> xenvManagers.stream().map(xenvManager -> (Runnable) () -> {
@@ -154,11 +152,11 @@ public class HeadQuarter {
                         logger.error(String.format("Failed to stop %s", s));
                     }
                 }))
+                .parallel()
                 .forEach(Runnable::run);
     }
 
     @Command
-    @StateMachine(endState = DeviceState.RUNNING)
     public void updateAll() {
         updateStatusServerConfiguration();
         updateDataFormatServerConfiguration();
@@ -168,7 +166,6 @@ public class HeadQuarter {
 
 
     @Command
-    @StateMachine(endState = DeviceState.RUNNING)
     public void restartAll() {
         stopAll();
         updateAll();
@@ -176,7 +173,6 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(deniedStates = DeviceState.RUNNING)
     public void updateStatusServerConfiguration() {
         configurationManagers.forEach(configurationManager -> {
             try {
@@ -193,7 +189,6 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(deniedStates = DeviceState.RUNNING)
     public void updateDataFormatServerConfiguration() {
         configurationManagers.forEach(configurationManager -> {
             try {
@@ -214,7 +209,6 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(deniedStates = DeviceState.RUNNING)
     public void updateCamelIntegrationConfiguration() {
         configurationManagers.forEach(configurationManager -> {
             try {
@@ -231,7 +225,6 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(deniedStates = DeviceState.RUNNING)
     public void updatePreExperimentDataCollectorConfiguration() {
         configurationManagers.forEach(configurationManager -> {
             try {
@@ -252,7 +245,6 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(endState = DeviceState.RUNNING)
     public void restartStatusServer() {
         xenvManagers.forEach(xenvManager -> {
             try {
@@ -272,7 +264,6 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(endState = DeviceState.RUNNING)
     public void restartDataFormatServer() {
         xenvManagers.forEach(xenvManager -> {
             try {
@@ -292,7 +283,6 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(endState = DeviceState.RUNNING)
     public void restartCamelIntegration() {
         xenvManagers.forEach(xenvManager -> {
             try {
@@ -312,7 +302,6 @@ public class HeadQuarter {
     }
 
     @Command
-    @StateMachine(endState = DeviceState.RUNNING)
     public void restartPreExperimentDataCollector() {
         xenvManagers.forEach(xenvManager -> {
             try {

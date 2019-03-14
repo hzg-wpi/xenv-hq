@@ -245,7 +245,6 @@ public class ConfigurationManager {
         if (profile != null)
             load();
 
-
         logger.info("ConfigurationManager has been initialized.");
     }
 

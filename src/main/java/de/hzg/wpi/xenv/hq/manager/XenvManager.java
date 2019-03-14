@@ -1,6 +1,7 @@
 package de.hzg.wpi.xenv.hq.manager;
 
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.MoreExecutors;
 import de.hzg.wpi.xenv.hq.HeadQuarter;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
@@ -28,7 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
 import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
@@ -45,7 +45,7 @@ public class XenvManager {
     private DeviceManager deviceManager;
 
     private final Logger logger = LoggerFactory.getLogger(XenvManager.class);
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService = MoreExecutors.newDirectExecutorService();
     @Attribute(isMemorized = true)
     public String profile;
     private Configuration configuration;
@@ -89,8 +89,10 @@ public class XenvManager {
     }
 
     @Attribute
-    public void setConfiguration(String yaml) {
+    public void setConfiguration(String yaml) throws Exception {
         configuration = YamlHelper.fromString(yaml, Configuration.class);
+
+        YamlHelper.toYaml(configuration, Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML));
 
         executorService.submit(
                 new CommitAndPushConfigurationTask());
@@ -223,7 +225,6 @@ public class XenvManager {
         public void run() {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
             try {
-                YamlHelper.toYaml(configuration, Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML));
                 AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
                 new AntTaskExecutor("commit-configuration", antProject).run();
                 new AntTaskExecutor("push-configuration", antProject).run();
