@@ -15,6 +15,7 @@ import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.tango.DeviceState;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
@@ -53,6 +54,8 @@ public class ConfigurationManager {
 
     @DeviceManagement
     private DeviceManager deviceManager;
+    @State
+    private volatile DeviceState state;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -90,6 +93,14 @@ public class ConfigurationManager {
 
     public void setProfile(String profile) {
         this.profile = profile;
+    }
+
+    public DeviceState getState() {
+        return state;
+    }
+
+    public void setState(DeviceState state) {
+        this.state = state;
     }
 
     @Attribute
@@ -296,7 +307,8 @@ public class ConfigurationManager {
 
     @Command(inTypeDesc = "username")
     public void store(String username) {
-        new CommitAndPushConfigurationTask(username).run();
+        executorService.submit(
+                new CommitAndPushConfigurationTask(username));
     }
 
     @Command(inTypeDesc = "profile|host|instance")
@@ -307,13 +319,13 @@ public class ConfigurationManager {
     }
 
     @Command(inTypeDesc = "profile")
-    public void deleteProfile(String profile) throws Exception {
+    public void deleteProfile(String profile) {
         new ProfileManager().deleteProfile(new ProfileManager.Profile(profile, null, null));
 
         if (profile.equalsIgnoreCase(this.profile)) {
             this.profile = null;
             this.configuration = null;
-            //TODO setState()
+            setState(DeviceState.STANDBY);
         }
     }
 
@@ -327,13 +339,14 @@ public class ConfigurationManager {
         }
 
         public void run() {
+            MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
             try {
                 antProject.getProject().setUserProperty("user.name", userName);
                 new AntTaskExecutor("commit-configuration", antProject).run();
                 new AntTaskExecutor("push-configuration", antProject).run();
             } catch (Exception e) {
                 logger.error("Failed to save configuration.xml");
-//                setState();
+                setState(DeviceState.ALARM);
             }
         }
     }
