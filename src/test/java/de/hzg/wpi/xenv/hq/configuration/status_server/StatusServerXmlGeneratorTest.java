@@ -46,7 +46,7 @@ public class StatusServerXmlGeneratorTest {
         Configuration configuration = XmlHelper.fromString(
                 "<Configuration profile='test'>\n" +
                         "    <dataSourceList>\n" +
-                        "        <DataSource id='1" +
+                        "        <DataSource id='1'" +
                         "                    nxPath='/entry'\n" +
                         "                    type='log'\n" +
                         "                    src='tine:///test/xenv/tine/name'\n" +
