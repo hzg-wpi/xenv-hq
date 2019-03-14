@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -34,8 +33,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
 import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
-import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
-import static de.hzg.wpi.xenv.hq.manager.XenvManager.MANAGER_YML;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -59,7 +56,7 @@ public class ConfigurationManager {
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    private final AntProject antProject = new AntProject(getAntRoot() + "/build.xml");
+    private final AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
 
     Configuration configuration;
     @Attribute(isMemorized = true)
@@ -226,7 +223,7 @@ public class ConfigurationManager {
 
 
     @Init
-    @StateMachine(endState = DeviceState.ON)
+    @StateMachine(endState = DeviceState.STANDBY)
     public void init() throws Exception {
         if (Files.exists(Paths.get("configuration"))) {
             update();
@@ -254,6 +251,7 @@ public class ConfigurationManager {
     }
 
     @Command
+    @StateMachine(endState = DeviceState.ON)
     public void load() throws Exception {
         Preconditions.checkNotNull(profile);
         this.configuration = XmlHelper.fromXml(Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(CONFIGURATION_XML), Configuration.class);
@@ -266,7 +264,7 @@ public class ConfigurationManager {
                     "url\n" +
                     "pollRate\n" +
                     "dataType\n")
-    public void createDataSource(String[] params) {
+    public void createDataSource(String[] params) throws Exception {
         URI nxPath = URI.create(params[1]);
         Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[2]));
         URI src = URI.create(params[3]);
@@ -282,82 +280,44 @@ public class ConfigurationManager {
         );
 
         configuration.addOrReplaceDataSource(result);
+
+        configuration.toXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve(CONFIGURATION_XML));
     }
 
     @Command(inTypeDesc = "id")
-    public void removeDataSource(long id) {
+    public void removeDataSource(long id) throws Exception {
         DataSource result = new DataSource();
         result.id = id;
 
         configuration.removeDataSource(result);
+
+        configuration.toXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve(CONFIGURATION_XML));
     }
 
     @Command(inTypeDesc = "username")
-    public void store(String username) throws Exception {
-        Preconditions.checkNotNull(profile);
-        configuration.toXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve(CONFIGURATION_XML));
-
-        executorService.submit(new CommitAndPushConfigurationTask(username));
-    }
-
-    private static String getAntRoot() {
-        return System.getProperty(XENV_HQ_TMP_DIR, "src/main/resources/ant");
+    public void store(String username) {
+        new CommitAndPushConfigurationTask(username).run();
     }
 
     @Command(inTypeDesc = "profile|host|instance")
     public void createProfile(String[] profile) throws Exception {
-        Path profilePath = Paths.get(PROFILES_ROOT).resolve(profile[0]);
-        Preconditions.checkState(Files.notExists(profilePath), String.format("Profile %s already exists!", profile));
-
-        Files.createDirectory(profilePath);
-
-        Profile profile1 = new Profile(profile[0], profile[1], profile[2]);
-        executeAnt(profile1, "copy-profile");
-
-        executeAnt(profile1, "add-profile");
-
-        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
+        ProfileManager.Profile profile1 = new ProfileManager.Profile(profile[0], profile[1], profile[2]);
+        ProfileManager creator = new ProfileManager();
+        creator.createProfile(profile1, configuration);
     }
 
     @Command(inTypeDesc = "profile")
     public void deleteProfile(String profile) throws Exception {
-        Path profilePath = Paths.get(PROFILES_ROOT).resolve(profile);
-        Preconditions.checkState(Files.exists(profilePath), String.format("Profile %s must exists!", profile));
+        new ProfileManager().deleteProfile(new ProfileManager.Profile(profile, null, null));
 
-        executeAnt(new Profile(profile, null, null), "remove-profile");
-
-        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
-    }
-
-    void executeAnt(Profile profile, String s) throws IOException {
-        AntProject project = new AntProject(getAntRoot() + "/build.xml");
-
-        setProfileProperties(profile, project);
-
-        new AntTaskExecutor(s, project).run();
-    }
-
-    private void setProfileProperties(Profile profile, AntProject project) throws IOException {
-        de.hzg.wpi.xenv.hq.manager.Configuration manager = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve(this.profile).resolve(MANAGER_YML), de.hzg.wpi.xenv.hq.manager.Configuration.class);
-        project.getProject().setBasedir(Paths.get(PROFILES_ROOT).getParent().toAbsolutePath().toString());
-        project.getProject().setProperty("profile", profile.name);
-
-        project.getProject().setProperty("tango_host", profile.tango_host);
-        project.getProject().setProperty("instance_name", profile.instance_name);
-        project.getProject().setProperty("tine_home", manager.tine_home);
-    }
-
-    static class Profile {
-        String name;
-        String tango_host;
-        String instance_name;
-
-        public Profile(String name, String tango_host, String instance_name) {
-            this.name = name;
-            this.tango_host = tango_host;
-            this.instance_name = instance_name;
+        if (profile.equalsIgnoreCase(this.profile)) {
+            this.profile = null;
+            this.configuration = null;
+            //TODO setState()
         }
     }
+
+
 
     private class CommitAndPushConfigurationTask implements Runnable {
         String userName;
@@ -368,13 +328,12 @@ public class ConfigurationManager {
 
         public void run() {
             try {
-                configuration.toXml(Paths.get(HeadQuarter.PROFILES_ROOT).resolve(configuration.profile).resolve("configuration.xml"));
                 antProject.getProject().setUserProperty("user.name", userName);
                 new AntTaskExecutor("commit-configuration", antProject).run();
                 new AntTaskExecutor("push-configuration", antProject).run();
             } catch (Exception e) {
                 logger.error("Failed to save configuration.xml");
-                //TODO send event
+//                setState();
             }
         }
     }

@@ -62,31 +62,25 @@ public class ConfigurationManagerIT {
 
     @Test
     public void testCopyDefaultProfile() throws Exception {
-        ConfigurationManager.Profile newTestProfile = new ConfigurationManager.Profile("newTestProfile", null, null);
+        ProfileManager.Profile newTestProfile = new ProfileManager.Profile("newTestProfile", "xxx:10000", "troll");
 
-        ConfigurationManager instance = new ConfigurationManager();
+        ProfileManager manager = new ProfileManager();
 
-        instance.profile = "test";
-        instance.load();
-
-        instance.executeAnt(newTestProfile, "copy-profile");
+        manager.executeAnt(newTestProfile, "copy-profile");
         FileUtils.forceDeleteOnExit(Paths.get(PROFILES_ROOT).resolve(newTestProfile.name).toFile());
     }
 
     @Test
     public void testCreateDeleteProfile() throws Exception {
-        ConfigurationManager.Profile newTestProfile = new ConfigurationManager.Profile("newTestProfile", null, null);
+        ProfileManager.Profile newTestProfile = new ProfileManager.Profile("newTestProfile", null, null);
 
-        ConfigurationManager instance = new ConfigurationManager();
+        ProfileManager manager = new ProfileManager();
 
-        instance.profile = "test";
-        instance.load();
-
-        instance.createProfile(new String[]{newTestProfile.name, newTestProfile.tango_host, newTestProfile.instance_name});
+        manager.createProfile(newTestProfile, null);
 
         Thread.sleep(3000);
 
-        instance.deleteProfile(newTestProfile.name);
+        manager.deleteProfile(newTestProfile);
 
         FileUtils.forceDeleteOnExit(Paths.get(PROFILES_ROOT).resolve(newTestProfile.name).toFile());
     }

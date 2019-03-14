@@ -69,6 +69,10 @@ public class HeadQuarter {
                 StandardCopyOption.REPLACE_EXISTING);
     }
 
+    public static String getAntRoot() {
+        return System.getProperty(XENV_HQ_TMP_DIR, "src/main/resources/ant");
+    }
+
     @Init
     @StateMachine(endState = DeviceState.ON)
     public void init() {
