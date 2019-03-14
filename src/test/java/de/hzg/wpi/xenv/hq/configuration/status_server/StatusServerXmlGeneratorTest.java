@@ -17,13 +17,15 @@ public class StatusServerXmlGeneratorTest {
         Configuration configuration = XmlHelper.fromString(
                 "<Configuration profile='test'>\n" +
                         "    <dataSourceList>\n" +
-                        "        <DataSource nxPath='/entry'\n" +
+                        "        <DataSource id='0'" +
+                        "                    nxPath='/entry'\n" +
                         "                    type='scalar'\n" +
                         "                    src='test/xenv/predator/name'\n" +
                         "                    pollRate='0'\n" +
                         "            dataType='string'" +
                         "        />\n" +
-                        "        <DataSource nxPath='/entry/hardware'\n" +
+                        "        <DataSource id='2'" +
+                        "                    nxPath='/entry/hardware'\n" +
                         "                    type='log'\n" +
                         "                    src='tango://tango_host:10000/test/xenv/motor1/position'\n" +
                         "                    pollRate='200'\n" +
@@ -44,19 +46,22 @@ public class StatusServerXmlGeneratorTest {
         Configuration configuration = XmlHelper.fromString(
                 "<Configuration profile='test'>\n" +
                         "    <dataSourceList>\n" +
-                        "        <DataSource nxPath='/entry'\n" +
+                        "        <DataSource id='1" +
+                        "                    nxPath='/entry'\n" +
                         "                    type='log'\n" +
                         "                    src='tine:///test/xenv/tine/name'\n" +
                         "                    pollRate='100'\n" +
                         "                    dataType='string'" +
                         "        />\n" +
-                        "        <DataSource nxPath='/entry/hardware'\n" +
+                        "        <DataSource id='2'" +
+                        "                    nxPath='/entry/hardware'\n" +
                         "                    type='log'\n" +
                         "                    src='tango://tango_host:10000/test/xenv/motor1/X'\n" +
                         "                    pollRate='200'\n" +
                         "            dataType='string'" +
                         "        />\n" +
-                        "        <DataSource nxPath='/entry/hardware'\n" +
+                        "        <DataSource id='3'" +
+                        "                    nxPath='/entry/hardware'\n" +
                         "                    type='log'\n" +
                         "                    src='tango://tango_host:10000/test/xenv/motor1/Y'\n" +
                         "                    pollRate='200'\n" +
