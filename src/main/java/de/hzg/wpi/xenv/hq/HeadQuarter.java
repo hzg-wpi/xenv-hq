@@ -107,9 +107,10 @@ public class HeadQuarter {
             try {
                 xenvManager.setProfile(profile);
                 xenvManager.load();
+                xenvManager.setState(DeviceState.ON);
             } catch (IOException e) {
-                logger.error("XenvManager failed to load configuration");
-                setState(DeviceState.ALARM);
+                logger.error("XenvManager failed to load configuration", e);
+                xenvManager.setState(DeviceState.FAULT);
             }
         });
 
@@ -117,9 +118,10 @@ public class HeadQuarter {
             try {
                 configurationManager.setProfile(profile);
                 configurationManager.load();
+                configurationManager.setState(DeviceState.ON);
             } catch (Exception e) {
-                logger.error("ConfigManager failed to load configuration");
-                setState(DeviceState.ALARM);
+                logger.error("ConfigManager failed to load configuration", e);
+                configurationManager.setState(DeviceState.FAULT);
             }
         });
         logger.trace("Done.");

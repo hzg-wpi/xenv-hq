@@ -16,14 +16,43 @@
     </target>
 
     <target name="pull-configuration">
-        <exec executable="hg" dir="configuration" failifexecutionfails="true" failonerror="true">
+        <exec executable="hg" failifexecutionfails="true" failonerror="true">
             <arg value="pull"/>
         </exec>
     </target>
 
-    <target name="update-configuration">
-        <exec executable="hg" dir="configuration" failifexecutionfails="true" failonerror="true">
+    <target name="-try-update">
+        <exec executable="hg" failonerror="false">
             <arg value="up"/>
+        </exec>
+    </target>
+
+    <target name="-try-merge">
+        <exec executable="hg" failonerror="false">
+            <arg value="merge"/>
+        </exec>
+        <exec executable="hg" failonerror="false">
+            <arg value="commit"/>
+            <arg value="-m 'merge'"/>
+        </exec>
+    </target>
+
+    <target name="update-configuration">
+        <antcall target="-try-update"/>
+        <antcall target="-try-merge"/>
+    </target>
+
+    <target name="commit-configuration">
+        <exec executable="hg" failifexecutionfails="true" failonerror="true">
+            <arg value="commit"/>
+            <arg value="-m"/>
+            <arg value="user ${user.name} has updated configuration"/>
+        </exec>
+    </target>
+
+    <target name="push-configuration">
+        <exec executable="hg" failifexecutionfails="true" failonerror="false">
+            <arg value="push"/>
         </exec>
     </target>
 
@@ -60,19 +89,7 @@
         </exec>
     </target>
 
-    <target name="commit-configuration">
-        <exec executable="hg" dir="configuration" failifexecutionfails="true" failonerror="true">
-            <arg value="commit"/>
-            <arg value="-m"/>
-            <arg value="user ${user.name} has updated configuration"/>
-        </exec>
-    </target>
 
-    <target name="push-configuration">
-        <exec executable="hg" dir="configuration" failifexecutionfails="true" failonerror="true">
-            <arg value="push"/>
-        </exec>
-    </target>
 
     <target name="prepare-executable">
         <copy tofile="bin/${executable}" overwrite="true">

@@ -2,7 +2,6 @@ package de.hzg.wpi.xenv.hq.manager;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.MoreExecutors;
-import de.hzg.wpi.xenv.hq.HeadQuarter;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
 import de.hzg.wpi.xenv.hq.util.FilesHelper;
@@ -21,8 +20,6 @@ import org.tango.client.ez.proxy.TangoProxy;
 import org.tango.client.ez.proxy.TangoProxyException;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -43,6 +40,9 @@ public class XenvManager {
 
     @DeviceManagement
     private DeviceManager deviceManager;
+
+    @State
+    private volatile DeviceState state;
 
     private final Logger logger = LoggerFactory.getLogger(XenvManager.class);
     private final ExecutorService executorService = MoreExecutors.newDirectExecutorService();
@@ -74,11 +74,6 @@ public class XenvManager {
     }
 
     @Attribute
-    public String getConfiguration() {
-        return YamlHelper.toYamlString(configuration);
-    }
-
-    @Attribute
     public String getTangoHost() {
         return configuration.tango_host;
     }
@@ -88,16 +83,6 @@ public class XenvManager {
         return configuration.instance_name;
     }
 
-    @Attribute
-    public void setConfiguration(String yaml) throws Exception {
-        configuration = YamlHelper.fromString(yaml, Configuration.class);
-
-        YamlHelper.toYaml(configuration, Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML));
-
-        executorService.submit(
-                new CommitAndPushConfigurationTask());
-    }
-
     @Init
     @StateMachine(endState = DeviceState.STANDBY)
     public void init() throws IOException {
@@ -105,9 +90,10 @@ public class XenvManager {
         FilesHelper.createIfNotExists("logs");
         FilesHelper.createIfNotExists("etc");
 
-        Yaml yaml = new Yaml(new Constructor(TangoServers.class));
-
-        servers = yaml.load(Files.newBufferedReader(Paths.get("configuration/etc/xenv-servers.yml")));
+        servers = YamlHelper.fromYamlFile(
+                Paths.get("configuration/etc/xenv-servers.yml"),
+                TangoServers.class
+        );
     }
 
     @Command
@@ -120,7 +106,10 @@ public class XenvManager {
                         .resolve(profile)
                         .resolve(MANAGER_YML), Configuration.class);
 
-
+        servers = YamlHelper.fromYamlFile(
+                Paths.get("configuration/etc/xenv-servers.yml"),
+                TangoServers.class
+        );
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
@@ -221,17 +210,11 @@ public class XenvManager {
         return tangoServer;
     }
 
-    private class CommitAndPushConfigurationTask implements Runnable {
-        public void run() {
-            MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
-            try {
-                AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
-                new AntTaskExecutor("commit-configuration", antProject).run();
-                new AntTaskExecutor("push-configuration", antProject).run();
-            } catch (Exception e) {
-                logger.error("Failed to save configuration.xml");
-                //TODO send event
-            }
-        }
+    public DeviceState getState() {
+        return state;
+    }
+
+    public void setState(DeviceState state) {
+        this.state = state;
     }
 }

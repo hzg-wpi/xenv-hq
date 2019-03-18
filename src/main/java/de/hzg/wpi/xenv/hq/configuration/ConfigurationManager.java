@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
 import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
+import static de.hzg.wpi.xenv.hq.manager.XenvManager.MANAGER_YML;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -59,8 +61,6 @@ public class ConfigurationManager {
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    private final AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
-
     Configuration configuration;
     @Attribute(isMemorized = true)
     public String profile;
@@ -73,6 +73,7 @@ public class ConfigurationManager {
     @Attribute
     @AttributeProperties(format = "yaml")
     public String preExperimentDataCollectorYaml;
+    public static final Path CONFIGURATION_PATH = Paths.get("configuration");
 
     @Attribute
     public String[] getProfiles() throws IOException {
@@ -128,18 +129,9 @@ public class ConfigurationManager {
                 .toXmlString();
     }
 
-    public void setNexusFileTemplate(String nxFile) throws Exception {
-        Preconditions.checkNotNull(configuration);
-
-        XmlHelper.fromString(nxFile, NexusXml.class)
-                .toXml(
-                        Paths.get(HeadQuarter.PROFILES_ROOT)
-                                .resolve(configuration.profile)
-                                .resolve(DATA_FORMAT_SERVER)
-                                .resolve(TEMPLATE_NXDL_XML));
-
-        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
-    }
+    @Attribute
+    @AttributeProperties(format = "yml")
+    private String xenvManagerConfiguration;
 
 
     public String getCamelRoutes() throws Exception {
@@ -153,17 +145,17 @@ public class ConfigurationManager {
                 .toXmlString();
     }
 
-    public void setCamelRoutes(String xml) throws Exception {
+    public void setNexusFileTemplate(String nxFile) throws Exception {
         Preconditions.checkNotNull(configuration);
 
-        XmlHelper.fromString(xml, CamelRoutesXml.class)
+        XmlHelper.fromString(nxFile, NexusXml.class)
                 .toXml(
                         Paths.get(HeadQuarter.PROFILES_ROOT)
                                 .resolve(configuration.profile)
-                                .resolve(CAMEL_INTEGRATION)
-                                .resolve(ROUTES_XML));
+                                .resolve(DATA_FORMAT_SERVER)
+                                .resolve(TEMPLATE_NXDL_XML));
 
-        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
+        commit(System.getProperty("user.name", "unknown"));
     }
 
     @Attribute
@@ -197,14 +189,17 @@ public class ConfigurationManager {
         return YamlHelper.toYamlString(yaml);
     }
 
-    public void setPreExperimentDataCollectorYaml(String yamlString) throws Exception {
-        Object yaml = YamlHelper.fromString(yamlString, Object.class);
-        YamlHelper.toYaml(yaml, Paths.get(HeadQuarter.PROFILES_ROOT)
-                .resolve(configuration.profile)
-                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
-                .resolve(META_YAML));
+    public void setCamelRoutes(String xml) throws Exception {
+        Preconditions.checkNotNull(configuration);
 
-        executorService.submit(new CommitAndPushConfigurationTask(System.getProperty("user.name", "unknown")));
+        XmlHelper.fromString(xml, CamelRoutesXml.class)
+                .toXml(
+                        Paths.get(HeadQuarter.PROFILES_ROOT)
+                                .resolve(configuration.profile)
+                                .resolve(CAMEL_INTEGRATION)
+                                .resolve(ROUTES_XML));
+
+        commit(System.getProperty("user.name", "unknown"));
     }
 
     public String getPreExperimentDataCollectorLoginProperties() throws IOException {
@@ -224,6 +219,35 @@ public class ConfigurationManager {
         return configuration.toXmlString();
     }
 
+    public void setPreExperimentDataCollectorYaml(String yamlString) throws Exception {
+        Object yaml = YamlHelper.fromString(yamlString, Object.class);
+        YamlHelper.toYaml(yaml, Paths.get(HeadQuarter.PROFILES_ROOT)
+                .resolve(configuration.profile)
+                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
+                .resolve(META_YAML));
+
+        commit(System.getProperty("user.name", "unknown"));
+    }
+
+    public String getXenvManagerConfiguration() throws IOException {
+        Preconditions.checkNotNull(profile);
+
+        return YamlHelper.toYamlString(
+                YamlHelper.fromYamlFile(
+                        Paths.get(PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML),
+                        de.hzg.wpi.xenv.hq.manager.Configuration.class));
+    }
+
+    public void setXenvManagerConfiguration(String yaml) throws Exception {
+        Preconditions.checkNotNull(profile);
+
+        YamlHelper.toYaml(
+                YamlHelper.fromString(yaml, de.hzg.wpi.xenv.hq.manager.Configuration.class),
+                Paths.get(PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML));
+
+        commit(System.getProperty("user.name", "unknown"));
+    }
+
     @Attribute
     public String[] getDataSources() throws Exception {
         Preconditions.checkNotNull(configuration);
@@ -236,10 +260,10 @@ public class ConfigurationManager {
     @Init
     @StateMachine(endState = DeviceState.STANDBY)
     public void init() throws Exception {
-        if (Files.exists(Paths.get("configuration"))) {
+        if (Files.exists(CONFIGURATION_PATH)) {
             update();
         } else {
-            new AntTaskExecutor("clone-configuration", antProject).run();
+            cloneConfiguration();
         }
 
         if (profile != null)
@@ -248,16 +272,22 @@ public class ConfigurationManager {
         logger.info("ConfigurationManager has been initialized.");
     }
 
+    @Command
+    public void cloneConfiguration() {
+        AntProject antProject = newAntProject();
+        new AntTaskExecutor("clone-configuration", antProject).run();
+    }
+
     @Delete
     @StateMachine(endState = DeviceState.OFF)
     public void delete() {
+        AntProject antProject = newAntProject();
         new AntTaskExecutor("push-configuration", antProject).run();
     }
 
     @Command
     public void update() {
-        new AntTaskExecutor("pull-configuration", antProject).run();
-        new AntTaskExecutor("update-configuration", antProject).run();
+        executorService.submit(new PullAndUpdateConfigurationTask());
     }
 
     @Command
@@ -305,9 +335,18 @@ public class ConfigurationManager {
     }
 
     @Command(inTypeDesc = "username")
-    public void store(String username) {
+    public void commit(String username) {
+        AntProject antProject = newAntProject();
+        antProject.getProject().setUserProperty("user.name", username);
+        new AntTaskExecutor("commit-configuration", antProject).run();
+    }
+
+    @Command(inTypeDesc = "username")
+    public void push() {
         executorService.submit(
-                new CommitAndPushConfigurationTask(username));
+                new PullAndUpdateConfigurationTask());
+        executorService.submit(
+                new PushConfigurationTask());
     }
 
     @Command(inTypeDesc = "profile|host|instance")
@@ -328,23 +367,34 @@ public class ConfigurationManager {
         }
     }
 
+    private AntProject newAntProject() {
+        AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
+        antProject.getProject().setBasedir(CONFIGURATION_PATH.toAbsolutePath().toString());
+        return antProject;
+    }
 
-
-    private class CommitAndPushConfigurationTask implements Runnable {
-        String userName;
-
-        public CommitAndPushConfigurationTask(String userName) {
-            this.userName = userName;
-        }
-
+    private class PullAndUpdateConfigurationTask implements Runnable {
         public void run() {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
             try {
-                antProject.getProject().setUserProperty("user.name", userName);
-                new AntTaskExecutor("commit-configuration", antProject).run();
+                AntProject antProject = newAntProject();
+                new AntTaskExecutor("pull-configuration", antProject).run();
+                new AntTaskExecutor("update-configuration", antProject).run();
+            } catch (Exception e) {
+                logger.error("Failed to pull configuration");
+                setState(DeviceState.ALARM);
+            }
+        }
+    }
+
+    private class PushConfigurationTask implements Runnable {
+        public void run() {
+            MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
+            try {
+                AntProject antProject = newAntProject();
                 new AntTaskExecutor("push-configuration", antProject).run();
             } catch (Exception e) {
-                logger.error("Failed to save configuration.xml");
+                logger.error("Failed to push configuration");
                 setState(DeviceState.ALARM);
             }
         }
