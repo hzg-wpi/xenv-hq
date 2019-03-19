@@ -151,17 +151,18 @@ public class XenvManager {
 
         if (!Files.exists(pidFile))
             tryToKillViaDServer(shortClassName);
-        try {
-            String pid = new String(
-                    Files.readAllBytes(
-                            pidFile));
+        else
+            try {
+                String pid = new String(
+                        Files.readAllBytes(
+                                pidFile));
 
-            antProject.getProject().setProperty("pid", pid);
-            new AntTaskExecutor("kill-executable", antProject).run();
-        } catch (IOException | BuildException e) {
-            logger.warn("Failed to kill executable by pid due to exception", e);
-            tryToKillViaDServer(shortClassName);
-        }
+                antProject.getProject().setProperty("pid", pid);
+                new AntTaskExecutor("kill-executable", antProject).run();
+            } catch (IOException | BuildException e) {
+                logger.warn("Failed to kill executable by pid due to exception", e);
+                new AntTaskExecutor("force-kill-executable", antProject).run();
+            }
 
         return "Done.";
     }

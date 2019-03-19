@@ -123,7 +123,7 @@
     </target>
 
     <target name="kill-executable">
-        <exec executable="kill" failifexecutionfails="true" failonerror="true">
+        <exec executable="kill" failifexecutionfails="true" failonerror="true" timeout="2500">
             <arg value="${pid}"/>
         </exec>
     </target>
