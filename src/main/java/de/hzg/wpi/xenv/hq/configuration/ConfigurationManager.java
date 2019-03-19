@@ -52,6 +52,7 @@ public class ConfigurationManager {
     public static final String META_YAML = "meta.yaml";
     public static final String CONFIGURATION_XML = "configuration.xml";
     public static final String LOGIN_PROPERTIES = "login.properties";
+    public static final String DATASOURCE_SRC_EXTERNAL = "external:";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
     @DeviceManagement
@@ -306,7 +307,7 @@ public class ConfigurationManager {
     public void createDataSource(String[] params) throws Exception {
         URI nxPath = URI.create(params[1]);
         Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[2]));
-        String src = params[3].equalsIgnoreCase("external:") ? params[3] : URI.create(params[3]).toString();
+        String src = DATASOURCE_SRC_EXTERNAL.equalsIgnoreCase(params[3]) ? params[3] : URI.create(params[3]).toString();
 
 
         DataSource result = new DataSource(

@@ -205,6 +205,7 @@ public class XenvManager {
         antProject.getProject().setProperty("main_class", tangoServer.main_class);
         antProject.getProject().setProperty("version", tangoServer.version);
         antProject.getProject().setProperty("jmx_port", tangoServer.jmx_port);
+        antProject.getProject().setProperty("ram", tangoServer.ram);
         antProject.getProject().setProperty("url", tangoServer.url);
 
         return tangoServer;

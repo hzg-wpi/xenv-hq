@@ -9,5 +9,6 @@ public class TangoServer {
     public String main_class;
     public String version;
     public String jmx_port;
+    public String ram;
     public String url;
 }

@@ -106,6 +106,7 @@
                 <filter token="TINE_HOME" value="${tine_home}"/>
                 <filter token="LOG_HOME" value="${log_home}"/>
                 <filter token="LOG_LEVEL" value="${log_level}"/>
+                <filter token="RAM" value="${ram}"/>
             </filterset>
         </copy>
         <chmod file="bin/${executable}" perm="755"/>
