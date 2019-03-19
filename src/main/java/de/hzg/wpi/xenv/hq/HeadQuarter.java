@@ -180,7 +180,7 @@ public class HeadQuarter {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/StatusServer"));
                 Files.newOutputStream(
-                        conf.resolve("0.xml"), StandardOpenOption.CREATE)
+                        conf.resolve("status_server.xml"), StandardOpenOption.CREATE)
                         .write(configurationManager.getStatusServerXml().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write StatusServer configuration");
