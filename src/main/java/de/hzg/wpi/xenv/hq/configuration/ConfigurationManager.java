@@ -108,10 +108,10 @@ public class ConfigurationManager {
     @Attribute
     @AttributeProperties(format = "xml")
     public String getNexusFile() throws Exception {
-        Preconditions.checkNotNull(configuration);
+        Preconditions.checkNotNull(profile);
 
         NexusXml nexusXml = XmlHelper.fromXml(
-                Paths.get(HeadQuarter.PROFILES_ROOT).resolve(configuration.profile).resolve(DATA_FORMAT_SERVER).resolve("template.nxdl.xml"), NexusXml.class);
+                Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(DATA_FORMAT_SERVER).resolve("template.nxdl.xml"), NexusXml.class);
         FutureTask<NexusXml> task = new FutureTask<>(
                 new NexusXmlGenerator(configuration, nexusXml));
         task.run();
@@ -120,11 +120,11 @@ public class ConfigurationManager {
     }
 
     public String getNexusFileTemplate() throws Exception {
-        Preconditions.checkNotNull(configuration);
+        Preconditions.checkNotNull(profile);
 
         return XmlHelper.fromXml(
                 Paths.get(HeadQuarter.PROFILES_ROOT)
-                        .resolve(configuration.profile)
+                        .resolve(profile)
                         .resolve(DATA_FORMAT_SERVER)
                         .resolve(TEMPLATE_NXDL_XML), NexusXml.class)
                 .toXmlString();
@@ -133,29 +133,28 @@ public class ConfigurationManager {
     @AttributeProperties(format = "yml")
     private String xenvManagerConfiguration;
 
-
-    public String getCamelRoutes() throws Exception {
-        Preconditions.checkNotNull(configuration);
-
-        return XmlHelper.fromXml(
-                Paths.get(HeadQuarter.PROFILES_ROOT)
-                        .resolve(configuration.profile)
-                        .resolve(CAMEL_INTEGRATION)
-                        .resolve(ROUTES_XML), CamelRoutesXml.class)
-                .toXmlString();
-    }
-
     public void setNexusFileTemplate(String nxFile) throws Exception {
-        Preconditions.checkNotNull(configuration);
+        Preconditions.checkNotNull(profile);
 
         XmlHelper.fromString(nxFile, NexusXml.class)
                 .toXml(
                         Paths.get(HeadQuarter.PROFILES_ROOT)
-                                .resolve(configuration.profile)
+                                .resolve(profile)
                                 .resolve(DATA_FORMAT_SERVER)
                                 .resolve(TEMPLATE_NXDL_XML));
 
         commit(System.getProperty("user.name", "unknown"));
+    }
+
+    public String getCamelRoutes() throws Exception {
+        Preconditions.checkNotNull(profile);
+
+        return XmlHelper.fromXml(
+                Paths.get(HeadQuarter.PROFILES_ROOT)
+                        .resolve(profile)
+                        .resolve(CAMEL_INTEGRATION)
+                        .resolve(ROUTES_XML), CamelRoutesXml.class)
+                .toXmlString();
     }
 
     @Attribute
@@ -180,35 +179,40 @@ public class ConfigurationManager {
         return task.get().toXmlString();
     }
 
-    public String getPreExperimentDataCollectorYaml() throws IOException {
-        Object yaml = YamlHelper.fromYamlFile(
-                Paths.get(HeadQuarter.PROFILES_ROOT)
-                        .resolve(configuration.profile)
-                        .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
-                        .resolve(META_YAML), Object.class);
-        return YamlHelper.toYamlString(yaml);
-    }
-
     public void setCamelRoutes(String xml) throws Exception {
-        Preconditions.checkNotNull(configuration);
+        Preconditions.checkNotNull(profile);
 
         XmlHelper.fromString(xml, CamelRoutesXml.class)
                 .toXml(
                         Paths.get(HeadQuarter.PROFILES_ROOT)
-                                .resolve(configuration.profile)
+                                .resolve(profile)
                                 .resolve(CAMEL_INTEGRATION)
                                 .resolve(ROUTES_XML));
 
         commit(System.getProperty("user.name", "unknown"));
     }
 
-    public String getPreExperimentDataCollectorLoginProperties() throws IOException {
-        return new String(
-                Files.readAllBytes(
-                        Paths.get(HeadQuarter.PROFILES_ROOT)
-                                .resolve(configuration.profile)
-                                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
-                                .resolve("login.properties")));
+    public String getPreExperimentDataCollectorYaml() throws IOException {
+        Preconditions.checkNotNull(profile);
+
+        Object yaml = YamlHelper.fromYamlFile(
+                Paths.get(HeadQuarter.PROFILES_ROOT)
+                        .resolve(profile)
+                        .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
+                        .resolve(META_YAML), Object.class);
+        return YamlHelper.toYamlString(yaml);
+    }
+
+    public void setPreExperimentDataCollectorYaml(String yamlString) throws Exception {
+        Preconditions.checkNotNull(profile);
+
+        Object yaml = YamlHelper.fromString(yamlString, Object.class);
+        YamlHelper.toYaml(yaml, Paths.get(HeadQuarter.PROFILES_ROOT)
+                .resolve(profile)
+                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
+                .resolve(META_YAML));
+
+        commit(System.getProperty("user.name", "unknown"));
     }
 
     @Attribute
@@ -219,14 +223,15 @@ public class ConfigurationManager {
         return configuration.toXmlString();
     }
 
-    public void setPreExperimentDataCollectorYaml(String yamlString) throws Exception {
-        Object yaml = YamlHelper.fromString(yamlString, Object.class);
-        YamlHelper.toYaml(yaml, Paths.get(HeadQuarter.PROFILES_ROOT)
-                .resolve(configuration.profile)
-                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
-                .resolve(META_YAML));
+    public String getPreExperimentDataCollectorLoginProperties() throws IOException {
+        Preconditions.checkNotNull(profile);
 
-        commit(System.getProperty("user.name", "unknown"));
+        return new String(
+                Files.readAllBytes(
+                        Paths.get(HeadQuarter.PROFILES_ROOT)
+                                .resolve(profile)
+                                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
+                                .resolve("login.properties")));
     }
 
     public String getXenvManagerConfiguration() throws IOException {
