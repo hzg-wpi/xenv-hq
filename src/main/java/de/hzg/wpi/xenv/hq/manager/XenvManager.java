@@ -182,6 +182,7 @@ public class XenvManager {
         antProject.getProject().setProperty("tine_home", configuration.tine_home);
         antProject.getProject().setProperty("log_home", configuration.log_home);
         antProject.getProject().setProperty("log_level", configuration.log_level);
+        antProject.getProject().setProperty("xenv_root", System.getProperty("user.dir"));
         antProject.getProject().setProperty("executable", executable);
 
         TangoServer tangoServer;

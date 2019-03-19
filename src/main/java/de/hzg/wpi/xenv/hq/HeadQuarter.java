@@ -89,7 +89,7 @@ public class HeadQuarter {
 
     @Command
     public void clearAll() throws IOException {
-        Arrays.stream(new String[]{"bin", "etc", "logs", "var"}).forEach(s -> {
+        Arrays.stream(new String[]{"bin", "etc", "logs"}).forEach(s -> {
             try {
                 FileUtils.deleteDirectory(Paths.get(s).toFile());
             } catch (IOException e) {

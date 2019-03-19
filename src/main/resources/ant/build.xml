@@ -107,6 +107,7 @@
                 <filter token="LOG_HOME" value="${log_home}"/>
                 <filter token="LOG_LEVEL" value="${log_level}"/>
                 <filter token="RAM" value="${ram}"/>
+                <filter token="XENV_ROOT" value="${xenv_root}"/>
             </filterset>
         </copy>
         <chmod file="bin/${executable}" perm="755"/>
