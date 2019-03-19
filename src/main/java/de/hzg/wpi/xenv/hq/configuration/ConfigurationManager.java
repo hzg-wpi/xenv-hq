@@ -272,7 +272,7 @@ public class ConfigurationManager {
         logger.info("ConfigurationManager has been initialized.");
     }
 
-    @Command
+    @Command(name = "clone")
     public void cloneConfiguration() {
         AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
         new AntTaskExecutor("clone-configuration", antProject).run();
