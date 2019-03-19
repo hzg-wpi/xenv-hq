@@ -274,7 +274,7 @@ public class ConfigurationManager {
 
     @Command
     public void cloneConfiguration() {
-        AntProject antProject = newAntProject();
+        AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
         new AntTaskExecutor("clone-configuration", antProject).run();
     }
 
