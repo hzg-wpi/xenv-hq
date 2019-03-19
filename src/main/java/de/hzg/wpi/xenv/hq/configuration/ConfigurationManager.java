@@ -128,7 +128,6 @@ public class ConfigurationManager {
                         .resolve(TEMPLATE_NXDL_XML), NexusXml.class)
                 .toXmlString();
     }
-
     @Attribute
     @AttributeProperties(format = "yml")
     private String xenvManagerConfiguration;
@@ -307,14 +306,14 @@ public class ConfigurationManager {
     public void createDataSource(String[] params) throws Exception {
         URI nxPath = URI.create(params[1]);
         Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[2]));
-        URI src = URI.create(params[3]);
+        String src = params[3].equalsIgnoreCase("external:") ? params[3] : URI.create(params[3]).toString();
 
 
         DataSource result = new DataSource(
                 Long.parseLong(params[0]),
                 nxPath.toString(),
                 params[2],
-                src.toString(),
+                src,
                 Integer.parseInt(params[4]),
                 params[5]
         );
