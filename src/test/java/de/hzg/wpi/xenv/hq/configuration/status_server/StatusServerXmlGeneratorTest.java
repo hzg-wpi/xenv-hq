@@ -78,4 +78,33 @@ public class StatusServerXmlGeneratorTest {
         assertEquals("X", result.devices.get(1).attributes.get(0).name);
         assertEquals("Y", result.devices.get(1).attributes.get(1).name);
     }
+
+    @Test
+    public void call_external_predator() throws Exception {
+        Configuration configuration = XmlHelper.fromString(
+                "<Configuration profile='test'>\n" +
+                        "    <dataSourceList>\n" +
+                        "        <DataSource id='1'" +
+                        "                    nxPath='/entry/external'\n" +
+                        "                    type='log'\n" +
+                        "                    src='external:'\n" +
+                        "                    pollRate='100'\n" +
+                        "                    dataType='string'" +
+                        "        />\n" +
+                        "        <DataSource id='2'" +
+                        "                    nxPath='/entry/predator'\n" +
+                        "                    type='log'\n" +
+                        "                    src='predator:/X'\n" +
+                        "                    pollRate='200'\n" +
+                        "            dataType='string'" +
+                        "        />\n" +
+                        "    </dataSourceList>\n" +
+                        "</Configuration>", Configuration.class);
+
+        StatusServerXmlGenerator instance = new StatusServerXmlGenerator(configuration);
+
+        StatusServerXml result = instance.call();
+
+        assertEquals(0, result.devices.size());
+    }
 }

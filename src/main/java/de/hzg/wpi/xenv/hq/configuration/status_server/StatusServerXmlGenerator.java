@@ -4,6 +4,8 @@ import com.google.common.collect.Iterables;
 import de.hzg.wpi.xenv.hq.configuration.Configuration;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.JXPathNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -15,6 +17,8 @@ import java.util.concurrent.Callable;
  * @since 2/21/19
  */
 public class StatusServerXmlGenerator implements Callable<StatusServerXml> {
+    private final Logger logger = LoggerFactory.getLogger(StatusServerXmlGenerator.class);
+
     private final Configuration configuration;
 
     public StatusServerXmlGenerator(Configuration configuration) {
@@ -28,6 +32,7 @@ public class StatusServerXmlGenerator implements Callable<StatusServerXml> {
         JXPathContext jxPathContext = JXPathContext.newContext(result);
         configuration.dataSourceList.stream()
                 .filter(dataSource -> dataSource.type.equalsIgnoreCase("log"))//StatusServer processes only log
+                .filter(dataSource -> dataSource.src.startsWith("tine:") || dataSource.src.startsWith("tango:"))
                 .forEach(dataSource -> {
                     JxPath jxPath = new JxPath(URI.create(dataSource.src));
 
