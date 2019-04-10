@@ -63,8 +63,10 @@ public class ConfigurationManager {
 
     @DeviceManagement
     private DeviceManager deviceManager;
-    @State
+    @State(isPolled = true, pollingPeriod = 10)
     private volatile DeviceState state;
+    @Status(isPolled = true, pollingPeriod = 10)
+    private volatile String status;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -109,6 +111,14 @@ public class ConfigurationManager {
 
     public void setState(DeviceState state) {
         this.state = state;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     private NexusXml getNexusFile() throws Exception {

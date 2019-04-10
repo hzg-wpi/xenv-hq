@@ -41,8 +41,10 @@ public class XenvManager {
     @DeviceManagement
     private DeviceManager deviceManager;
 
-    @State
+    @State(isPolled = true, pollingPeriod = 10)
     private volatile DeviceState state;
+    @Status(isPolled = true, pollingPeriod = 10)
+    private volatile String status;
 
     private final Logger logger = LoggerFactory.getLogger(XenvManager.class);
     private final ExecutorService executorService = MoreExecutors.newDirectExecutorService();
@@ -219,5 +221,13 @@ public class XenvManager {
 
     public void setState(DeviceState state) {
         this.state = state;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setState(String status) {
+        this.status = status;
     }
 }
