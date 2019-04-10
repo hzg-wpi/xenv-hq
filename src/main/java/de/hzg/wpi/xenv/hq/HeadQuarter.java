@@ -197,7 +197,7 @@ public class HeadQuarter {
                 Path conf = Files.createDirectories(Paths.get("etc/DataFormatServer"));
                 Files.newOutputStream(
                         conf.resolve("default.nxdl.xml"), StandardOpenOption.CREATE)
-                        .write(configurationManager.getNexusFile().getBytes());
+                        .write(configurationManager.getNexusFileXml().getBytes());
 
                 Files.newOutputStream(
                         conf.resolve("nxpath.mapping"), StandardOpenOption.CREATE)

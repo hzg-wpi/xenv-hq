@@ -20,7 +20,13 @@ import org.tango.DeviceState;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
 
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.nio.file.Files;
@@ -105,18 +111,37 @@ public class ConfigurationManager {
         this.state = state;
     }
 
-    @Attribute
-    @AttributeProperties(format = "xml")
-    public String getNexusFile() throws Exception {
+    private NexusXml getNexusFile() throws Exception {
         Preconditions.checkNotNull(profile);
-
         NexusXml nexusXml = XmlHelper.fromXml(
                 Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(DATA_FORMAT_SERVER).resolve("template.nxdl.xml"), NexusXml.class);
         FutureTask<NexusXml> task = new FutureTask<>(
                 new NexusXmlGenerator(configuration, nexusXml));
         task.run();
 
-        return task.get().toXmlString();
+        return task.get();
+    }
+
+    @Attribute
+    @AttributeProperties(format = "xml")
+    public String getNexusFileXml() throws Exception {
+        return getNexusFile().toXmlString();
+    }
+
+    @Attribute
+    @AttributeProperties(format = "webix/xml")
+    public String getNexusFileWebixXml() throws Exception {
+        TransformerFactory factory = TransformerFactory.newInstance();
+        Source xslt = new StreamSource(getClass().getResourceAsStream("/nexus-to-webix.xslt"));
+        Transformer transformer = factory.newTransformer(xslt);
+
+        Source xml = new StreamSource(new StringReader(getNexusFileXml()));
+
+        StringWriter result = new StringWriter();
+
+        transformer.transform(xml, new StreamResult(result));
+
+        return result.toString();
     }
 
     public String getNexusFileTemplate() throws Exception {
@@ -129,6 +154,8 @@ public class ConfigurationManager {
                         .resolve(TEMPLATE_NXDL_XML), NexusXml.class)
                 .toXmlString();
     }
+
+
     @Attribute
     @AttributeProperties(format = "yml")
     private String xenvManagerConfiguration;

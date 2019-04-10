@@ -42,7 +42,7 @@ public class ConfigurationManagerIT {
         instance.profile = "test";
         instance.load();
 
-        String result = instance.getNexusFile();
+        String result = instance.getNexusFileXml();
         System.out.println(result);
 
     }
