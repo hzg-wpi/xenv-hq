@@ -227,7 +227,7 @@ public class XenvManager {
         return status;
     }
 
-    public void setState(String status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 }
