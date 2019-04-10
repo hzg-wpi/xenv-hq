@@ -34,9 +34,9 @@ public class HeadQuarter {
 
     private final Logger logger = LoggerFactory.getLogger(HeadQuarter.class);
 
-    @State(isPolled = true, pollingPeriod = 10)
+    @State(isPolled = false, pollingPeriod = 10)
     private DeviceState state;
-    @State(isPolled = true, pollingPeriod = 10)
+    @State(isPolled = false, pollingPeriod = 10)
     private String status;
     @DeviceManagement
     public DeviceManager deviceManager;

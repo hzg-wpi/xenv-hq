@@ -63,9 +63,9 @@ public class ConfigurationManager {
 
     @DeviceManagement
     private DeviceManager deviceManager;
-    @State(isPolled = true, pollingPeriod = 10)
+    @State(isPolled = false, pollingPeriod = 10)
     private volatile DeviceState state;
-    @Status(isPolled = true, pollingPeriod = 10)
+    @Status(isPolled = false, pollingPeriod = 10)
     private volatile String status;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
