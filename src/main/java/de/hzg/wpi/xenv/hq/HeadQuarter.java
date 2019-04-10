@@ -36,7 +36,7 @@ public class HeadQuarter {
 
     @State(isPolled = false, pollingPeriod = 10)
     private DeviceState state;
-    @State(isPolled = false, pollingPeriod = 10)
+    @Status(isPolled = false, pollingPeriod = 10)
     private String status;
     @DeviceManagement
     public DeviceManager deviceManager;
