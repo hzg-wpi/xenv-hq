@@ -1,7 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration.status_server;
 
 import com.google.common.collect.Iterables;
-import de.hzg.wpi.xenv.hq.configuration.Configuration;
+import de.hzg.wpi.xenv.hq.configuration.DataSource;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.JXPathNotFoundException;
 import org.slf4j.Logger;
@@ -19,10 +19,10 @@ import java.util.concurrent.Callable;
 public class StatusServerXmlGenerator implements Callable<StatusServerXml> {
     private final Logger logger = LoggerFactory.getLogger(StatusServerXmlGenerator.class);
 
-    private final Configuration configuration;
+    private final List<DataSource> dataSourceList;
 
-    public StatusServerXmlGenerator(Configuration configuration) {
-        this.configuration = configuration;
+    public StatusServerXmlGenerator(List<DataSource> dataSourceList) {
+        this.dataSourceList = dataSourceList;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class StatusServerXmlGenerator implements Callable<StatusServerXml> {
         StatusServerXml result = new StatusServerXml();
 
         JXPathContext jxPathContext = JXPathContext.newContext(result);
-        configuration.dataSourceList.stream()
+        dataSourceList.stream()
                 .filter(dataSource -> dataSource.type.equalsIgnoreCase("log"))//StatusServer processes only log
                 .filter(dataSource -> dataSource.src.startsWith("tine:") || dataSource.src.startsWith("tango:"))
                 .forEach(dataSource -> {

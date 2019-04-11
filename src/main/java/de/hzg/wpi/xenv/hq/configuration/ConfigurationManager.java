@@ -11,6 +11,9 @@ import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXml;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXmlGenerator;
+import de.hzg.wpi.xenv.hq.manager.Manager;
+import de.hzg.wpi.xenv.hq.profile.Profile;
+import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
 import org.slf4j.Logger;
@@ -40,9 +43,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
-import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
-import static de.hzg.wpi.xenv.hq.manager.XenvManager.MANAGER_YML;
-
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 2/19/19
@@ -50,16 +50,10 @@ import static de.hzg.wpi.xenv.hq.manager.XenvManager.MANAGER_YML;
 @Device
 public class ConfigurationManager {
     public static final List<String> VALID_DATA_SOURCE_TYPES = Arrays.asList("scalar", "spectrum", "log");
-    public static final String DATA_FORMAT_SERVER = "DataFormatServer";
-    public static final String CAMEL_INTEGRATION = "CamelIntegration";
-    public static final String ROUTES_XML = "routes.xml";
-    public static final String TEMPLATE_NXDL_XML = "template.nxdl.xml";
-    public static final String PRE_EXPERIMENT_DATA_COLLECTOR = "PreExperimentDataCollector";
-    public static final String META_YAML = "meta.yaml";
     public static final String CONFIGURATION_XML = "configuration.xml";
-    public static final String LOGIN_PROPERTIES = "login.properties";
     public static final String DATASOURCE_SRC_EXTERNAL = "external:";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
+    private final ProfileManager profileManager = new ProfileManager();
 
     @DeviceManagement
     private DeviceManager deviceManager;
@@ -70,9 +64,7 @@ public class ConfigurationManager {
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    Configuration configuration;
-    @Attribute(isMemorized = true)
-    public String profile;
+    Profile profile;
     @Attribute
     @AttributeProperties(format = "xml")
     public String nexusFileTemplate;
@@ -97,12 +89,10 @@ public class ConfigurationManager {
         this.deviceManager = deviceManager;
     }
 
+    @Attribute
+    @AttributeProperties(format = "json")
     public String getProfile() {
-        return profile;
-    }
-
-    public void setProfile(String profile) {
-        this.profile = profile;
+        return new Gson().toJson(profile);
     }
 
     public DeviceState getState() {
@@ -118,15 +108,16 @@ public class ConfigurationManager {
     }
 
     public void setStatus(String status) {
+        logger.info(status);
         this.status = status;
+//        deviceManager.pushEvent("Status", new AttributeValue(status), EventType.CHANGE_EVENT);
     }
 
     private NexusXml getNexusFile() throws Exception {
         Preconditions.checkNotNull(profile);
-        NexusXml nexusXml = XmlHelper.fromXml(
-                Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(DATA_FORMAT_SERVER).resolve("template.nxdl.xml"), NexusXml.class);
+        NexusXml nexusXml = profile.getNexusTemplateXml();
         FutureTask<NexusXml> task = new FutureTask<>(
-                new NexusXmlGenerator(configuration, nexusXml));
+                new NexusXmlGenerator(profile.getDataSources(), nexusXml));
         task.run();
 
         return task.get();
@@ -157,50 +148,47 @@ public class ConfigurationManager {
     public String getNexusFileTemplate() throws Exception {
         Preconditions.checkNotNull(profile);
 
-        return XmlHelper.fromXml(
-                Paths.get(HeadQuarter.PROFILES_ROOT)
-                        .resolve(profile)
-                        .resolve(DATA_FORMAT_SERVER)
-                        .resolve(TEMPLATE_NXDL_XML), NexusXml.class)
-                .toXmlString();
+        return profile.getNexusTemplateXml().toXmlString();
     }
+
+    public void setNexusFileTemplate(String nxFile) throws Exception {
+        Preconditions.checkNotNull(profile);
+
+        profile.setNexusFileTemplate(
+                XmlHelper.fromString(nxFile, NexusXml.class));
+
+        commit(System.getProperty("user.name", "unknown"));
+    }
+
 
 
     @Attribute
     @AttributeProperties(format = "yml")
     private String xenvManagerConfiguration;
 
-    public void setNexusFileTemplate(String nxFile) throws Exception {
-        Preconditions.checkNotNull(profile);
-
-        XmlHelper.fromString(nxFile, NexusXml.class)
-                .toXml(
-                        Paths.get(HeadQuarter.PROFILES_ROOT)
-                                .resolve(profile)
-                                .resolve(DATA_FORMAT_SERVER)
-                                .resolve(TEMPLATE_NXDL_XML));
-
-        commit(System.getProperty("user.name", "unknown"));
-    }
 
     public String getCamelRoutes() throws Exception {
         Preconditions.checkNotNull(profile);
 
-        return XmlHelper.fromXml(
-                Paths.get(HeadQuarter.PROFILES_ROOT)
-                        .resolve(profile)
-                        .resolve(CAMEL_INTEGRATION)
-                        .resolve(ROUTES_XML), CamelRoutesXml.class)
+        return profile.getCamelRoutesXml()
                 .toXmlString();
+    }
+
+    public void setCamelRoutes(String xml) throws Exception {
+        Preconditions.checkNotNull(profile);
+
+        profile.setCamelRoutes(XmlHelper.fromString(xml, CamelRoutesXml.class));
+
+        commit(System.getProperty("user.name", "unknown"));
     }
 
     @Attribute
     public String getNexusMapping() throws ExecutionException, InterruptedException, IOException {
-        Preconditions.checkNotNull(configuration);
+        Preconditions.checkNotNull(profile);
 
         StringWriter out = new StringWriter();
 
-        FutureTask<Properties> task = new FutureTask<>(new MappingGenerator(configuration));
+        FutureTask<Properties> task = new FutureTask<>(new MappingGenerator(profile.getDataSources()));
         task.run();
         task.get().store(out, null);
 
@@ -209,34 +197,17 @@ public class ConfigurationManager {
 
     @Attribute
     public String getStatusServerXml() throws Exception {
-        Preconditions.checkNotNull(configuration);
+        Preconditions.checkNotNull(profile);
 
-        FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(configuration));
+        FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(profile.getDataSources()));
         task.run();
         return task.get().toXmlString();
     }
 
-    public void setCamelRoutes(String xml) throws Exception {
+    public String getPreExperimentDataCollectorYaml() throws Exception {
         Preconditions.checkNotNull(profile);
 
-        XmlHelper.fromString(xml, CamelRoutesXml.class)
-                .toXml(
-                        Paths.get(HeadQuarter.PROFILES_ROOT)
-                                .resolve(profile)
-                                .resolve(CAMEL_INTEGRATION)
-                                .resolve(ROUTES_XML));
-
-        commit(System.getProperty("user.name", "unknown"));
-    }
-
-    public String getPreExperimentDataCollectorYaml() throws IOException {
-        Preconditions.checkNotNull(profile);
-
-        Object yaml = YamlHelper.fromYamlFile(
-                Paths.get(HeadQuarter.PROFILES_ROOT)
-                        .resolve(profile)
-                        .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
-                        .resolve(META_YAML), Object.class);
+        Object yaml = profile.getPredatorYaml();
         return YamlHelper.toYamlString(yaml);
     }
 
@@ -244,10 +215,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(profile);
 
         Object yaml = YamlHelper.fromString(yamlString, Object.class);
-        YamlHelper.toYaml(yaml, Paths.get(HeadQuarter.PROFILES_ROOT)
-                .resolve(profile)
-                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
-                .resolve(META_YAML));
+        profile.setPredatorYaml(yaml);
 
         commit(System.getProperty("user.name", "unknown"));
     }
@@ -255,46 +223,36 @@ public class ConfigurationManager {
     @Attribute
     @AttributeProperties(format = "xml")
     public String getConfigurationXml() throws Exception {
-        Preconditions.checkNotNull(configuration);
+        Preconditions.checkNotNull(profile);
 
-        return configuration.toXmlString();
+        return profile.getConfiguration().toXmlString();
     }
 
     public String getPreExperimentDataCollectorLoginProperties() throws IOException {
         Preconditions.checkNotNull(profile);
 
-        return new String(
-                Files.readAllBytes(
-                        Paths.get(HeadQuarter.PROFILES_ROOT)
-                                .resolve(profile)
-                                .resolve(PRE_EXPERIMENT_DATA_COLLECTOR)
-                                .resolve("login.properties")));
+        return profile.getPredatorLoginProperties();
     }
 
     public String getXenvManagerConfiguration() throws IOException {
         Preconditions.checkNotNull(profile);
 
-        return YamlHelper.toYamlString(
-                YamlHelper.fromYamlFile(
-                        Paths.get(PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML),
-                        de.hzg.wpi.xenv.hq.manager.Configuration.class));
+        return YamlHelper.toYamlString(profile.manager);
     }
 
     public void setXenvManagerConfiguration(String yaml) throws Exception {
         Preconditions.checkNotNull(profile);
 
-        YamlHelper.toYaml(
-                YamlHelper.fromString(yaml, de.hzg.wpi.xenv.hq.manager.Configuration.class),
-                Paths.get(PROFILES_ROOT).resolve(profile).resolve(MANAGER_YML));
+        profile.setManager(YamlHelper.fromString(yaml, Manager.class));
 
         commit(System.getProperty("user.name", "unknown"));
     }
 
     @Attribute
-    public String[] getDataSources() throws Exception {
-        Preconditions.checkNotNull(configuration);
+    public String[] getDataSources() {
+        Preconditions.checkNotNull(profile);
 
-        return configuration.dataSourceList.stream()
+        return profile.getDataSources().stream()
                 .map(dataSource -> new Gson().toJson(dataSource)).toArray(String[]::new);
     }
 
@@ -308,10 +266,9 @@ public class ConfigurationManager {
             cloneConfiguration();
         }
 
-        if (profile != null)
-            load();
+        profile = null;
 
-        logger.info("ConfigurationManager has been initialized.");
+        setStatus("ConfigurationManager has been initialized.");
     }
 
     @Command(name = "clone")
@@ -334,9 +291,12 @@ public class ConfigurationManager {
 
     @Command
     @StateMachine(endState = DeviceState.ON)
-    public void load() throws Exception {
-        Preconditions.checkNotNull(profile);
-        this.configuration = XmlHelper.fromXml(Paths.get(HeadQuarter.PROFILES_ROOT).resolve(profile).resolve(CONFIGURATION_XML), Configuration.class);
+    public void loadProfile(String name) throws Exception {
+        Preconditions.checkNotNull(name);
+        this.profile = profileManager.loadProfile(name);
+
+        setState(DeviceState.ON);
+        setStatus("Profile set to " + name);
     }
 
     @Command(inTypeDesc =
@@ -361,9 +321,9 @@ public class ConfigurationManager {
                 params[5]
         );
 
-        configuration.addOrReplaceDataSource(result);
+        profile.addDataSource(result);
 
-        configuration.toXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve(CONFIGURATION_XML));
+        profile.dumpConfiguration();
     }
 
     @Command(inTypeDesc = "id")
@@ -371,13 +331,14 @@ public class ConfigurationManager {
         DataSource result = new DataSource();
         result.id = id;
 
-        configuration.removeDataSource(result);
+        profile.removeDataSource(result);
 
-        configuration.toXml(Paths.get(PROFILES_ROOT).resolve(profile).resolve(CONFIGURATION_XML));
+        profile.dumpConfiguration();
     }
 
     @Command(inTypeDesc = "username")
     public void commit(String username) {
+        //TODO #10
         AntProject antProject = newAntProject();
         antProject.getProject().setUserProperty("user.name", username);
         new AntTaskExecutor("commit-configuration", antProject).run();
@@ -392,19 +353,18 @@ public class ConfigurationManager {
     }
 
     @Command(inTypeDesc = "profile|host|instance")
-    public void createProfile(String[] profile) throws Exception {
-        ProfileManager.Profile profile1 = new ProfileManager.Profile(profile[0], profile[1], profile[2]);
-        ProfileManager creator = new ProfileManager();
-        creator.createProfile(profile1, configuration);
+    public void createProfile(String[] profileData) throws Exception {
+        Preconditions.checkArgument(profileData.length == 3);
+        profileManager.createProfile(profileData[0], profileData[1], profileData[2], this.profile);
     }
 
     @Command(inTypeDesc = "profile")
     public void deleteProfile(String profile) {
-        new ProfileManager().deleteProfile(new ProfileManager.Profile(profile, null, null));
+        new ProfileManager().deleteProfile(profile);
 
-        if (profile.equalsIgnoreCase(this.profile)) {
+        if (this.profile != null && profile.equalsIgnoreCase(this.profile.name)) {
             this.profile = null;
-            this.configuration = null;
+            setStatus("Profile has been set to null");
             setState(DeviceState.STANDBY);
         }
     }

@@ -1,11 +1,11 @@
 package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
-import de.hzg.wpi.xenv.hq.configuration.Configuration;
 import de.hzg.wpi.xenv.hq.configuration.DataSource;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.JXPathNotFoundException;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -13,11 +13,11 @@ import java.util.concurrent.Callable;
  * @since 2/20/19
  */
 public class NexusXmlGenerator implements Callable<NexusXml> {
-    private final Configuration configuration;
+    private final List<DataSource> dataSourceList;
     private final NexusXml nexusXml;
 
-    public NexusXmlGenerator(Configuration configuration, NexusXml nexusXml) {
-        this.configuration = configuration;
+    public NexusXmlGenerator(List<DataSource> dataSourceList, NexusXml nexusXml) {
+        this.dataSourceList = dataSourceList;
         this.nexusXml = nexusXml;
     }
 
@@ -25,7 +25,7 @@ public class NexusXmlGenerator implements Callable<NexusXml> {
     public NexusXml call() throws Exception {
         JXPathContext jxPathContext = JXPathContext.newContext(nexusXml);
 
-        configuration.dataSourceList
+        dataSourceList
                 .forEach(dataSource -> {
                     NxPathParser.JxPath JXPath = new NxPathParser(
                             URI.create(dataSource.nxPath)).toJXPath();

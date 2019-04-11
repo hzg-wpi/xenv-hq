@@ -1,12 +1,8 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.file.Paths;
-
-import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -22,10 +18,9 @@ public class ConfigurationManagerIT {
     public void loadConfiguration() throws Exception {
         ConfigurationManager instance = new ConfigurationManager();
 
-        instance.profile = "test";
-        instance.load();
+        instance.loadProfile("test");
 
-        Configuration configuration = instance.configuration;
+        Configuration configuration = instance.profile.configuration;
 
         assertNotNull(configuration);
         assertEquals(1, configuration.dataSourceList.size());
@@ -39,8 +34,7 @@ public class ConfigurationManagerIT {
     public void getNexusFile() throws Exception {
         ConfigurationManager instance = new ConfigurationManager();
 
-        instance.profile = "test";
-        instance.load();
+        instance.loadProfile("test");
 
         String result = instance.getNexusFileXml();
         System.out.println(result);
@@ -51,8 +45,7 @@ public class ConfigurationManagerIT {
     public void getNexusMapping() throws Exception {
         ConfigurationManager instance = new ConfigurationManager();
 
-        instance.profile = "test";
-        instance.load();
+        instance.loadProfile("test");
 
         String result = instance.getNexusMapping();
         System.out.println(result);
@@ -60,28 +53,7 @@ public class ConfigurationManagerIT {
         assertTrue(result.contains("tango\\://"));//escape ':'
     }
 
-    @Test
-    public void testCopyDefaultProfile() throws Exception {
-        ProfileManager.Profile newTestProfile = new ProfileManager.Profile("newTestProfile", "xxx:10000", "troll");
 
-        ProfileManager manager = new ProfileManager();
 
-        manager.executeAnt(newTestProfile, "copy-profile");
-        FileUtils.forceDeleteOnExit(Paths.get(PROFILES_ROOT).resolve(newTestProfile.name).toFile());
-    }
 
-    @Test
-    public void testCreateDeleteProfile() throws Exception {
-        ProfileManager.Profile newTestProfile = new ProfileManager.Profile("newTestProfile", null, null);
-
-        ProfileManager manager = new ProfileManager();
-
-        manager.createProfile(newTestProfile, null);
-
-        Thread.sleep(3000);
-
-        manager.deleteProfile(newTestProfile);
-
-        FileUtils.forceDeleteOnExit(Paths.get(PROFILES_ROOT).resolve(newTestProfile.name).toFile());
-    }
 }

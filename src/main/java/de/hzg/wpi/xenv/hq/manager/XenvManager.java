@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.MoreExecutors;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
+import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.FilesHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
 import fr.esrf.Tango.DevFailed;
@@ -27,7 +28,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 
-import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
 import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
 
 /**
@@ -47,32 +47,14 @@ public class XenvManager {
     private volatile String status;
 
     private final Logger logger = LoggerFactory.getLogger(XenvManager.class);
+    private final ProfileManager profileManager = new ProfileManager();
     private final ExecutorService executorService = MoreExecutors.newDirectExecutorService();
-    @Attribute(isMemorized = true)
-    public String profile;
-    private Configuration configuration;
+    private Manager configuration;
 
     private TangoServers servers;
 
     public void setDeviceManager(DeviceManager deviceManager) {
         this.deviceManager = deviceManager;
-    }
-
-    @Attribute
-    public String[] getProfiles() throws IOException {
-        Preconditions.checkState(Files.exists(Paths.get("configuration")));
-
-        return Files.list(Paths.get(PROFILES_ROOT)).map(
-                path -> path.getFileName().toString()
-        ).toArray(String[]::new);
-    }
-
-    public String getProfile() {
-        return profile;
-    }
-
-    public void setProfile(String profile) {
-        this.profile = profile;
     }
 
     @Attribute
@@ -92,6 +74,8 @@ public class XenvManager {
         FilesHelper.createIfNotExists("logs");
         FilesHelper.createIfNotExists("etc");
 
+        configuration = null;
+
         servers = YamlHelper.fromYamlFile(
                 Paths.get("configuration/etc/xenv-servers.yml"),
                 TangoServers.class
@@ -99,19 +83,17 @@ public class XenvManager {
     }
 
     @Command
-    @StateMachine(endState = DeviceState.ON)
-    public void load() throws IOException {
-        Preconditions.checkNotNull(profile, "Set profile first!");
+    public void loadProfile(String name) throws Exception {
+        Preconditions.checkNotNull(name, "Set profile first!");
 
-        configuration = YamlHelper.fromYamlFile(
-                Paths.get(PROFILES_ROOT)
-                        .resolve(profile)
-                        .resolve(MANAGER_YML), Configuration.class);
+        configuration = profileManager.loadProfile(name).manager;
 
         servers = YamlHelper.fromYamlFile(
                 Paths.get("configuration/etc/xenv-servers.yml"),
                 TangoServers.class
         );
+
+        setState(DeviceState.ON);
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
@@ -178,7 +160,7 @@ public class XenvManager {
         dserver.executeCommand("Kill");
     }
 
-    private TangoServer populateAntProjectWithProperties(Configuration configuration, String executable, AntProject antProject) {
+    private TangoServer populateAntProjectWithProperties(Manager configuration, String executable, AntProject antProject) {
         antProject.getProject().setProperty("tango_host", configuration.tango_host);
         antProject.getProject().setProperty("instance_name", configuration.instance_name);
         antProject.getProject().setProperty("tine_home", configuration.tine_home);

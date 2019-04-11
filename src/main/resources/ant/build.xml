@@ -62,6 +62,7 @@
                 <include name="**/*"/>
             </fileset>
             <filterset>
+                <filter token="PARENT_PROFILE" value="${parent}"/>
                 <filter token="TANGO_HOST" value="${tango_host}"/>
                 <filter token="INSTANCE_NAME" value="${instance_name}"/>
                 <filter token="TINE_HOME" value="${tine_home}"/>

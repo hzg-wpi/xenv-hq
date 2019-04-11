@@ -105,12 +105,11 @@ public class HeadQuarter {
 
     @Command
     public void load(String profile) {
+        logger.trace("Loading profile " + profile);
         xenvManagers.forEach(xenvManager -> {
             try {
-                xenvManager.setProfile(profile);
-                xenvManager.load();
-                xenvManager.setState(DeviceState.ON);
-            } catch (IOException e) {
+                xenvManager.loadProfile(profile);
+            } catch (Exception e) {
                 logger.error("XenvManager failed to load configuration", e);
                 xenvManager.setState(DeviceState.FAULT);
             }
@@ -118,9 +117,7 @@ public class HeadQuarter {
 
         configurationManagers.forEach(configurationManager -> {
             try {
-                configurationManager.setProfile(profile);
-                configurationManager.load();
-                configurationManager.setState(DeviceState.ON);
+                configurationManager.loadProfile(profile);
             } catch (Exception e) {
                 logger.error("ConfigManager failed to load configuration", e);
                 configurationManager.setState(DeviceState.FAULT);

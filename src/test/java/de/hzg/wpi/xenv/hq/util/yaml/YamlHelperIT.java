@@ -1,6 +1,6 @@
 package de.hzg.wpi.xenv.hq.util.yaml;
 
-import de.hzg.wpi.xenv.hq.manager.Configuration;
+import de.hzg.wpi.xenv.hq.manager.Manager;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class YamlHelperIT {
 
     @Test
     public void test_manager() throws IOException {
-        Configuration result = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve("test/manager.yml"), Configuration.class);
+        Manager result = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve("test/manager.yml"), Manager.class);
 
         System.out.println(YamlHelper.toYamlString(result));
     }

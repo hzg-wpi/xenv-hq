@@ -2,8 +2,6 @@ package de.hzg.wpi.xenv.hq.manager;
 
 import org.junit.Test;
 
-import java.io.IOException;
-
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 2/22/19
@@ -11,11 +9,10 @@ import java.io.IOException;
 public class XenvManagerIT {
 
     @Test
-    public void startServer() throws IOException {
+    public void startServer() throws Exception {
         XenvManager instance = new XenvManager();
         instance.init();
-        instance.profile = "test";
-        instance.load();
+        instance.loadProfile("test");
 
         instance.startServer("status_server");
     }

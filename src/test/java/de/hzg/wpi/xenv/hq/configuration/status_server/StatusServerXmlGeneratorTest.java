@@ -34,7 +34,7 @@ public class StatusServerXmlGeneratorTest {
                         "    </dataSourceList>\n" +
                         "</Configuration>", Configuration.class);
 
-        StatusServerXmlGenerator instance = new StatusServerXmlGenerator(configuration);
+        StatusServerXmlGenerator instance = new StatusServerXmlGenerator(configuration.dataSourceList);
 
         StatusServerXml result = instance.call();
 
@@ -70,7 +70,7 @@ public class StatusServerXmlGeneratorTest {
                         "    </dataSourceList>\n" +
                         "</Configuration>", Configuration.class);
 
-        StatusServerXmlGenerator instance = new StatusServerXmlGenerator(configuration);
+        StatusServerXmlGenerator instance = new StatusServerXmlGenerator(configuration.dataSourceList);
 
         StatusServerXml result = instance.call();
 
@@ -101,7 +101,7 @@ public class StatusServerXmlGeneratorTest {
                         "    </dataSourceList>\n" +
                         "</Configuration>", Configuration.class);
 
-        StatusServerXmlGenerator instance = new StatusServerXmlGenerator(configuration);
+        StatusServerXmlGenerator instance = new StatusServerXmlGenerator(configuration.dataSourceList);
 
         StatusServerXml result = instance.call();
 

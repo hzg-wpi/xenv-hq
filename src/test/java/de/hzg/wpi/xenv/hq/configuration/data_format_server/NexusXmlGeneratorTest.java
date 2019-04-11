@@ -37,7 +37,7 @@ public class NexusXmlGeneratorTest {
         );
 
 
-        NexusXmlGenerator instance = new NexusXmlGenerator(configuration, nexusXml);
+        NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
         NexusXml nexusXml1 = instance.call();
 
@@ -58,7 +58,7 @@ public class NexusXmlGeneratorTest {
         );
 
 
-        NexusXmlGenerator instance = new NexusXmlGenerator(configuration, nexusXml);
+        NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
         NexusXml nexusXml1 = instance.call();
 
@@ -80,7 +80,7 @@ public class NexusXmlGeneratorTest {
         );
 
 
-        NexusXmlGenerator instance = new NexusXmlGenerator(configuration, nexusXml);
+        NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
         NexusXml nexusXml1 = instance.call();
 
@@ -104,7 +104,7 @@ public class NexusXmlGeneratorTest {
         );
 
 
-        NexusXmlGenerator instance = new NexusXmlGenerator(configuration, nexusXml);
+        NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
         NexusXml nexusXml1 = instance.call();
 
@@ -126,7 +126,7 @@ public class NexusXmlGeneratorTest {
         );
 
 
-        NexusXmlGenerator instance = new NexusXmlGenerator(configuration, nexusXml);
+        NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
         NexusXml nexusXml1 = instance.call();
 
@@ -158,7 +158,7 @@ public class NexusXmlGeneratorTest {
         );
 
 
-        NexusXmlGenerator instance = new NexusXmlGenerator(configuration, nexusXml);
+        NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
         NexusXml nexusXml1 = instance.call();
 
