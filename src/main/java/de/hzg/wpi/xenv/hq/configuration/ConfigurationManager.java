@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.tango.DeviceState;
+import org.tango.server.ChangeEventPusher;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
 
@@ -57,9 +58,9 @@ public class ConfigurationManager {
 
     @DeviceManagement
     private DeviceManager deviceManager;
-    @State(isPolled = false, pollingPeriod = 10)
+    @State(isPolled = true)
     private volatile DeviceState state;
-    @Status(isPolled = false, pollingPeriod = 10)
+    @Status(isPolled = true)
     private volatile String status;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -101,6 +102,7 @@ public class ConfigurationManager {
 
     public void setState(DeviceState state) {
         this.state = state;
+        new ChangeEventPusher<>("State", state, deviceManager).run();
     }
 
     public String getStatus() {
@@ -108,9 +110,9 @@ public class ConfigurationManager {
     }
 
     public void setStatus(String status) {
-        logger.info(status);
+        logger.debug(status);
         this.status = status;
-//        deviceManager.pushEvent("Status", new AttributeValue(status), EventType.CHANGE_EVENT);
+        new ChangeEventPusher<>("Status", status, deviceManager).run();
     }
 
     private NexusXml getNexusFile() throws Exception {

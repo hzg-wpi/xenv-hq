@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.tango.DeviceState;
 import org.tango.client.ez.proxy.NoSuchCommandException;
 import org.tango.client.ez.proxy.TangoProxyException;
+import org.tango.server.ChangeEventPusher;
 import org.tango.server.ServerManager;
 import org.tango.server.ServerManagerUtils;
 import org.tango.server.annotation.*;
@@ -34,9 +35,9 @@ public class HeadQuarter {
 
     private final Logger logger = LoggerFactory.getLogger(HeadQuarter.class);
 
-    @State(isPolled = false, pollingPeriod = 10)
+    @State(isPolled = true)
     private DeviceState state;
-    @Status(isPolled = false, pollingPeriod = 10)
+    @Status(isPolled = true)
     private String status;
     @DeviceManagement
     public DeviceManager deviceManager;
@@ -335,6 +336,7 @@ public class HeadQuarter {
 
     public void setState(DeviceState state) {
         this.state = state;
+        new ChangeEventPusher<>("State", state, deviceManager).run();
     }
 
     public String getStatus() {
@@ -343,5 +345,6 @@ public class HeadQuarter {
 
     public void setStatus(String status) {
         this.status = status;
+        new ChangeEventPusher<>("Status", status, deviceManager).run();
     }
 }
