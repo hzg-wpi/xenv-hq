@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.tango.DeviceState;
 import org.tango.server.ChangeEventPusher;
+import org.tango.server.StateChangeEventPusher;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
 
@@ -102,7 +103,7 @@ public class ConfigurationManager {
 
     public void setState(DeviceState state) {
         this.state = state;
-        new ChangeEventPusher<>("State", state, deviceManager).run();
+        new StateChangeEventPusher(state, deviceManager).run();
     }
 
     public String getStatus() {
