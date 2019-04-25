@@ -78,7 +78,7 @@ public class HeadQuarter {
     }
 
     @Init
-    @StateMachine(endState = DeviceState.ON)
+    @StateMachine(endState = DeviceState.STANDBY)
     public void init() {
         xenvManagers = ServerManagerUtils.getBusinessObjects(ServerManager.getInstance().getInstanceName(), XenvManager.class);
         configurationManagers = ServerManagerUtils.getBusinessObjects(ServerManager.getInstance().getInstanceName(), ConfigurationManager.class);
@@ -114,6 +114,7 @@ public class HeadQuarter {
             } catch (Exception e) {
                 logger.error("XenvManager failed to load configuration", e);
                 xenvManager.setState(DeviceState.FAULT);
+                xenvManager.setStatus("XenvManager failed to load configuration");
             }
         });
 
@@ -123,8 +124,12 @@ public class HeadQuarter {
             } catch (Exception e) {
                 logger.error("ConfigManager failed to load configuration", e);
                 configurationManager.setState(DeviceState.FAULT);
+                configurationManager.setStatus("ConfigManager failed to load configuration");
             }
         });
+        setState(DeviceState.ON);
+        setStatus("Profile set to " + profile);
+
         logger.trace("Done.");
     }
 

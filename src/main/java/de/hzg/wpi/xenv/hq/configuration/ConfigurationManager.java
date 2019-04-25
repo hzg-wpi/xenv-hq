@@ -293,7 +293,6 @@ public class ConfigurationManager {
     }
 
     @Command
-    @StateMachine(endState = DeviceState.ON)
     public void loadProfile(String name) throws Exception {
         Preconditions.checkNotNull(name);
         this.profile = profileManager.loadProfile(name);

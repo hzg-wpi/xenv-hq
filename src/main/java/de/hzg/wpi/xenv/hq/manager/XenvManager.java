@@ -96,6 +96,7 @@ public class XenvManager {
         );
 
         setState(DeviceState.ON);
+        setStatus("Profile set to " + name);
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
