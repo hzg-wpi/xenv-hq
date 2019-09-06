@@ -1,5 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
+import org.bson.codecs.pojo.annotations.BsonId;
+import org.bson.codecs.pojo.annotations.BsonProperty;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
@@ -13,6 +15,8 @@ import java.util.Objects;
  */
 @Root
 public class DataSource {
+    @BsonId
+    @BsonProperty("_id")
     @Attribute
     public long id;
     @Attribute

@@ -1,10 +1,12 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.IndexOptions;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -50,24 +52,75 @@ public class ConfigurationTest {
 
     @Test
     public void addDataSource() {
-        instance.addOrReplaceDataSource(new DataSource(System.currentTimeMillis(), "/entry/hardware/motor", "log", "test/motor/0", 200, "float32"));
-
-        assertEquals(2, instance.dataSourceList.size());
-        assertEquals("/entry/hardware/motor", instance.dataSourceList.get(1).nxPath);
+//        instance.addOrReplaceDataSource(new DataSource(System.currentTimeMillis(), "/entry/hardware/motor", "log", "test/motor/0", 200, "float32"));
+//
+//        assertEquals(2, instance.dataSourceList.size());
+//        assertEquals("/entry/hardware/motor", instance.dataSourceList.get(1).nxPath);
     }
 
     @Test
     public void replaceDataSource() {
-        instance.addOrReplaceDataSource(new DataSource(0L, "/entry", "log", "test/motor/0", 200, "float32"));
-
-        assertEquals(1, instance.dataSourceList.size());
-        assertEquals("test/motor/0", instance.dataSourceList.get(0).src);
+//        instance.addOrReplaceDataSource(new DataSource(0L, "/entry", "log", "test/motor/0", 200, "float32"));
+//
+//        assertEquals(1, instance.dataSourceList.size());
+//        assertEquals("test/motor/0", instance.dataSourceList.get(0).src);
     }
 
     @Test
     public void removeDataSource() {
-        instance.removeDataSource(new DataSource(0L, "/entry", "log", "test/motor/0", 200, "float32"));
-
-        assertTrue(instance.dataSourceList.isEmpty());
+//        instance.removeDataSource(new DataSource(0L, "/entry", "log", "test/motor/0", 200, "float32"));
+//
+//        assertTrue(instance.dataSourceList.isEmpty());
     }
+
+    @Test
+    public void testMongo() {
+        Mongo mongo = new Mongo();
+
+        MongoCollection<DataSource> dataSources = mongo.getMongoDb().getCollection("test", DataSource.class);
+
+        dataSources.createIndex(new Document("id", 1), new IndexOptions().unique(true));
+
+//        <dataSource id="1" nxPath="/entry/hardware/petra" type="log" src="tine:/PETRA/Idc/Buffer-0/I.SCH" pollRate="0" dataType="float64"/>
+        dataSources.insertOne(
+                new DataSource(1, "/entry/hardware/petra", "log", "tine:/PETRA/Idc/Buffer-0/X", 0, "float64")
+        );
+
+        dataSources = mongo.getMongoDb().getCollection("test1", DataSource.class);
+
+        dataSources.createIndex(new Document("id", 1), new IndexOptions().unique(true));
+
+//        <dataSource id="1" nxPath="/entry/hardware/petra" type="log" src="tine:/PETRA/Idc/Buffer-0/I.SCH" pollRate="0" dataType="float64"/>
+        dataSources.insertOne(
+                new DataSource(1, "/entry/hardware/petra", "log", "tine:/PETRA/Idc/Buffer-0/Y", 0, "float64")
+        );
+
+        mongo.close();
+    }
+
+//    @Test
+//    public void testReactiveMongo() throws Exception {
+//        CodecRegistry pojoCodecRegistry = fromRegistries(MongoClients.getDefaultCodecRegistry(),
+//                fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+//
+//        MongoClient client = MongoClients.create();
+//
+//        MongoDatabase db = client.getDatabase("xenv-hq").withCodecRegistry(pojoCodecRegistry);
+//
+//        MongoCollection<Document> collection = db.getCollection("datasources");
+//
+//        TODO override _id
+//        Observable.fromPublisher(collection.createIndex(
+//                new Document("id",1))).blockingSubscribe();
+//
+//
+//        Observable.fromPublisher(collection.insertOne(
+//                new Document("id","first")
+//                        .append("data", "data" /*new int[]{1,2,3}*/))).blockingSubscribe();
+//
+//        List<String> result =  Observable.fromPublisher(collection.find()).collect(ArrayList<String>::new,(list, document) -> list.add(document.toJson())).blockingGet();
+//
+//        System.out.println(result);
+//
+//    }
 }

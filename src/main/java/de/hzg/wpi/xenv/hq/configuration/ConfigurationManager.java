@@ -2,6 +2,7 @@ package de.hzg.wpi.xenv.hq.configuration;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
+import com.mongodb.client.MongoCollection;
 import de.hzg.wpi.xenv.hq.HeadQuarter;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
@@ -16,11 +17,14 @@ import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
+import org.bson.Document;
+import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.tango.DeviceState;
 import org.tango.server.ChangeEventPusher;
+import org.tango.server.ServerManager;
 import org.tango.server.StateChangeEventPusher;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
@@ -44,6 +48,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.stream.StreamSupport;
+
+import static com.mongodb.client.model.Filters.eq;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -56,6 +63,14 @@ public class ConfigurationManager {
     public static final String DATASOURCE_SRC_EXTERNAL = "external:";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
     private final ProfileManager profileManager = new ProfileManager();
+
+    private final JsonWriterSettings settings = JsonWriterSettings.builder()
+            .int64Converter((value, writer) -> writer.writeNumber(value.toString()))
+            .build();
+    private Mongo mongo;
+    private MongoCollection<Document> dataSources;
+    private String collection;
+
 
     @DeviceManagement
     private DeviceManager deviceManager;
@@ -251,18 +266,44 @@ public class ConfigurationManager {
         commit(System.getProperty("user.name", "unknown"));
     }
 
-    @Attribute
-    public String[] getDataSources() {
-        Preconditions.checkNotNull(profile);
-
-        return profile.getDataSources().stream()
-                .map(dataSource -> new Gson().toJson(dataSource)).toArray(String[]::new);
+    public static void main(String[] args) {
+        ServerManager.getInstance().start(args, ConfigurationManager.class);
     }
 
+    @Attribute
+    public String getDataSourceCollections() {
+        return new Gson().toJson(StreamSupport
+                .stream(mongo.getMongoDb().listCollections().spliterator(), false)
+                .map(document -> new Document("id", document.get("name")))
+                .toArray());
+    }
+
+    @Attribute
+    public void setDataSourcesCollection(String collection) {
+        this.collection = collection;
+    }
+
+    @Attribute
+    public String getDataSources() {
+        Preconditions.checkState(collection != null);
+        ;
+
+        return new Gson().toJson(StreamSupport
+                .stream(mongo.getMongoDb().getCollection(collection, DataSource.class).find().spliterator(), false)
+                .toArray());
+    }
+
+    @Command(name = "clone")
+    public void cloneConfiguration() {
+        AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
+        new AntTaskExecutor("clone-configuration", antProject).run();
+    }
 
     @Init
     @StateMachine(endState = DeviceState.STANDBY)
     public void init() throws Exception {
+        mongo = new Mongo();
+
         if (Files.exists(CONFIGURATION_PATH)) {
             update();
         } else {
@@ -274,17 +315,31 @@ public class ConfigurationManager {
         setStatus("ConfigurationManager has been initialized.");
     }
 
-    @Command(name = "clone")
-    public void cloneConfiguration() {
-        AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
-        new AntTaskExecutor("clone-configuration", antProject).run();
-    }
-
     @Delete
     @StateMachine(endState = DeviceState.OFF)
     public void delete() {
+        mongo.close();
+
         AntProject antProject = newAntProject();
         new AntTaskExecutor("push-configuration", antProject).run();
+    }
+
+    @Command(inTypeDesc = "[collection,dataSource as JSON]")
+    public void addDataSource(String[] args) {
+        String collection = args[0];
+        Document dataSource = Document.parse(args[1]);
+
+        mongo.getMongoDb().getCollection(collection)
+                .insertOne(dataSource);
+    }
+
+    @Command(inTypeDesc = "[collection,dataSource as JSON]")
+    public void updateDataSource(String[] args) {
+        String collection = args[0];
+        Document dataSource = Document.parse(args[1]);
+
+        mongo.getMongoDb().getCollection(collection)
+                .findOneAndUpdate(eq("_id", dataSource.get("_id")), dataSource);
     }
 
     @Command
@@ -402,5 +457,15 @@ public class ConfigurationManager {
                 setState(DeviceState.ALARM);
             }
         }
+    }
+
+    @Command(inTypeDesc = "[collection,id]")
+    public void deleteDataSource(String[] args) {
+        String collection = args[0];
+        String id = args[1];
+
+        mongo.getMongoDb().getCollection(collection)
+                .deleteOne(
+                        eq("_id", id));
     }
 }
