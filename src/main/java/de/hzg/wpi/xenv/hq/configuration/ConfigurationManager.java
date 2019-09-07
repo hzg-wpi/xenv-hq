@@ -17,6 +17,7 @@ import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
+import org.bson.BSON;
 import org.bson.Document;
 import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
@@ -324,22 +325,31 @@ public class ConfigurationManager {
         new AntTaskExecutor("push-configuration", antProject).run();
     }
 
-    @Command(inTypeDesc = "[collection,dataSource as JSON]")
-    public void addDataSource(String[] args) {
-        String collection = args[0];
-        Document dataSource = Document.parse(args[1]);
+    @Command(inTypeDesc = "dataSource as JSON")
+    public void insertDataSource(String arg) {
+        Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
+        DataSource dataSource = new Gson().fromJson(arg,DataSource.class);
 
-        mongo.getMongoDb().getCollection(collection)
+        mongo.getMongoDb().getCollection(collection, DataSource.class)
                 .insertOne(dataSource);
     }
 
-    @Command(inTypeDesc = "[collection,dataSource as JSON]")
-    public void updateDataSource(String[] args) {
-        String collection = args[0];
-        Document dataSource = Document.parse(args[1]);
+    @Command(inTypeDesc = "dataSource as JSON")
+    public void updateDataSource(String arg) {
+        Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
+        DataSource dataSource = new Gson().fromJson(arg, DataSource.class);
 
-        mongo.getMongoDb().getCollection(collection)
-                .findOneAndUpdate(eq("_id", dataSource.get("_id")), dataSource);
+        mongo.getMongoDb().getCollection(collection, DataSource.class)
+                .replaceOne(new Document("_id", dataSource.id), dataSource);
+    }
+
+    @Command(inTypeDesc = "dataSource as JSON")
+    public void deleteDataSource(String arg) {
+        Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
+        DataSource dataSource = new Gson().fromJson(arg, DataSource.class);
+
+        mongo.getMongoDb().getCollection(collection, DataSource.class)
+                .deleteOne(new Document("_id", dataSource.id));
     }
 
     @Command
@@ -457,15 +467,5 @@ public class ConfigurationManager {
                 setState(DeviceState.ALARM);
             }
         }
-    }
-
-    @Command(inTypeDesc = "[collection,id]")
-    public void deleteDataSource(String[] args) {
-        String collection = args[0];
-        String id = args[1];
-
-        mongo.getMongoDb().getCollection(collection)
-                .deleteOne(
-                        eq("_id", id));
     }
 }

@@ -79,16 +79,12 @@ public class ConfigurationTest {
 
         MongoCollection<DataSource> dataSources = mongo.getMongoDb().getCollection("test", DataSource.class);
 
-        dataSources.createIndex(new Document("id", 1), new IndexOptions().unique(true));
-
 //        <dataSource id="1" nxPath="/entry/hardware/petra" type="log" src="tine:/PETRA/Idc/Buffer-0/I.SCH" pollRate="0" dataType="float64"/>
         dataSources.insertOne(
                 new DataSource(1, "/entry/hardware/petra", "log", "tine:/PETRA/Idc/Buffer-0/X", 0, "float64")
         );
 
         dataSources = mongo.getMongoDb().getCollection("test1", DataSource.class);
-
-        dataSources.createIndex(new Document("id", 1), new IndexOptions().unique(true));
 
 //        <dataSource id="1" nxPath="/entry/hardware/petra" type="log" src="tine:/PETRA/Idc/Buffer-0/I.SCH" pollRate="0" dataType="float64"/>
         dataSources.insertOne(
