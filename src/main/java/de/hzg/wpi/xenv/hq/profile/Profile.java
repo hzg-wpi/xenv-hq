@@ -1,6 +1,5 @@
 package de.hzg.wpi.xenv.hq.profile;
 
-import com.google.common.collect.Maps;
 import de.hzg.wpi.xenv.hq.configuration.Configuration;
 import de.hzg.wpi.xenv.hq.configuration.DataSource;
 import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoutesXml;
@@ -16,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
 import static de.hzg.wpi.xenv.hq.configuration.ConfigurationManager.CONFIGURATION_XML;
@@ -39,7 +37,6 @@ public class Profile {
     public transient final Path path;
     public final Configuration configuration;
     public /*final*/ Manager manager;
-    public final Map<String, Integer> collections = Maps.newConcurrentMap();
 
     public Profile(String name, Configuration configuration, Manager manager, @Nullable Profile parent) {
         this.name = name;
