@@ -275,7 +275,7 @@ public class ConfigurationManager {
     public String getDataSourceCollections() {
         return new Gson().toJson(StreamSupport
                 .stream(mongo.getMongoDb().listCollections().spliterator(), false)
-                .map(document -> new Document("id", document.get("name")))
+                .map(document -> new Document("id", document.get("name")).append("value",document.get("name")))
                 .toArray());
     }
 
