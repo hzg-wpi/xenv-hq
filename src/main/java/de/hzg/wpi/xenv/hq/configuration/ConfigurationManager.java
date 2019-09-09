@@ -2,6 +2,7 @@ package de.hzg.wpi.xenv.hq.configuration;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
+import com.mongodb.Block;
 import com.mongodb.client.MongoCollection;
 import de.hzg.wpi.xenv.hq.HeadQuarter;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
@@ -17,7 +18,6 @@ import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
-import org.bson.BSON;
 import org.bson.Document;
 import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
@@ -50,8 +50,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.stream.StreamSupport;
-
-import static com.mongodb.client.model.Filters.eq;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -277,6 +275,24 @@ public class ConfigurationManager {
                 .stream(mongo.getMongoDb().listCollections().spliterator(), false)
                 .map(document -> new Document("id", document.get("name")).append("value",document.get("name")))
                 .toArray());
+    }
+
+    @Command(inTypeDesc = "collectionId")
+    public void deleteCollection(String collectionId) {
+        mongo.getMongoDb().getCollection(collectionId).drop();
+    }
+
+    @Command(inTypeDesc = "[collectionId, sourceId]")
+    public void cloneCollection(String[] args) {
+        String targetId = args[0];
+        String sourceId = args[1];
+        Preconditions.checkArgument(!targetId.isEmpty());
+        Preconditions.checkArgument(!sourceId.isEmpty());
+
+        mongo.getMongoDb().getCollection(targetId);
+        mongo.getMongoDb().getCollection(sourceId)
+                .find()
+                .forEach((Block<Document>) mongo.getMongoDb().getCollection(targetId)::insertOne);
     }
 
     @Attribute
