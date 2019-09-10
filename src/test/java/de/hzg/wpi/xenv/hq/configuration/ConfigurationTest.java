@@ -1,13 +1,20 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
+import com.google.gson.Gson;
 import com.mongodb.client.MongoCollection;
+import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.tango.server.device.DeviceManager;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -93,6 +100,38 @@ public class ConfigurationTest {
         );
 
         mongo.close();
+    }
+
+    @Test
+    @Ignore
+    public void migrateToMondo() throws Exception {
+        System.setProperty("mongodb.host", "hzgxenvtest");
+
+        Gson gson = new Gson();
+
+        try (Mongo mongo = new Mongo()) {
+            ConfigurationManager manager = new ConfigurationManager();
+            manager.setDeviceManager(mock(DeviceManager.class));
+
+            Arrays.stream(manager.getProfiles())
+                    .filter(s -> !s.equalsIgnoreCase("default"))
+                    .map(s -> {
+                        try {
+                            manager.loadProfile(s);
+                            return gson.fromJson(gson.toJson(manager.profile), Profile.class);
+                        } catch (Exception e) {
+                            System.err.println(e.getMessage());
+                            return null;
+                        }
+                    })
+                    .filter(profile -> profile != null)
+                    .forEach(profile -> {
+                        mongo.getMongoDb().getCollection(profile.name, DataSource.class).insertMany(profile.getDataSources().stream().map(dataSource -> {
+                            dataSource.id = System.nanoTime();
+                            return dataSource;
+                        }).collect(Collectors.toList()));
+                    });
+        }
     }
 
 //    @Test
