@@ -470,7 +470,7 @@ public class ConfigurationManager {
     }
 
     @Command
-    public void updateProfileCollections(DevVarLongStringArray collections) {
+    public void updateProfileCollections(DevVarLongStringArray collections) throws Exception {
         Preconditions.checkState(profile != null);
         ;
         Preconditions.checkArgument(collections.lvalue.length == collections.svalue.length);
@@ -481,7 +481,7 @@ public class ConfigurationManager {
 
         profile.configuration.collections = result;
 
-        //TODO commmit
+        profile.dumpConfiguration();
     }
 
     private class PullAndUpdateConfigurationTask implements Runnable {

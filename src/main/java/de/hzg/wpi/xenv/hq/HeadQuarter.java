@@ -175,7 +175,7 @@ public class HeadQuarter {
             try {
                 configurationManager.updateProfileCollections(collections);
             } catch (Exception e) {
-                logger.error("Failed to write StatusServer configuration");
+                logger.error("Failed to update profile collections configuration");
                 setState(DeviceState.ALARM);
             }
 
