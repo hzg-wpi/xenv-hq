@@ -1,7 +1,10 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.mongodb.Block;
+import com.mongodb.client.MongoCollection;
 import de.hzg.wpi.xenv.hq.HeadQuarter;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
@@ -16,11 +19,15 @@ import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
+import fr.esrf.Tango.DevVarLongStringArray;
+import org.bson.Document;
+import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.tango.DeviceState;
 import org.tango.server.ChangeEventPusher;
+import org.tango.server.ServerManager;
 import org.tango.server.StateChangeEventPusher;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
@@ -44,6 +51,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -56,6 +65,14 @@ public class ConfigurationManager {
     public static final String DATASOURCE_SRC_EXTERNAL = "external:";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
     private final ProfileManager profileManager = new ProfileManager();
+
+    private final JsonWriterSettings settings = JsonWriterSettings.builder()
+            .int64Converter((value, writer) -> writer.writeNumber(value.toString()))
+            .build();
+    private Mongo mongo;
+    private MongoCollection<Document> dataSources;
+    private String collection;
+
 
     @DeviceManagement
     private DeviceManager deviceManager;
@@ -120,7 +137,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(profile);
         NexusXml nexusXml = profile.getNexusTemplateXml();
         FutureTask<NexusXml> task = new FutureTask<>(
-                new NexusXmlGenerator(profile.getDataSources(), nexusXml));
+                new NexusXmlGenerator(getDataSources(profile), nexusXml));
         task.run();
 
         return task.get();
@@ -191,7 +208,7 @@ public class ConfigurationManager {
 
         StringWriter out = new StringWriter();
 
-        FutureTask<Properties> task = new FutureTask<>(new MappingGenerator(profile.getDataSources()));
+        FutureTask<Properties> task = new FutureTask<>(new MappingGenerator(getDataSources(profile)));
         task.run();
         task.get().store(out, null);
 
@@ -202,9 +219,17 @@ public class ConfigurationManager {
     public String getStatusServerXml() throws Exception {
         Preconditions.checkNotNull(profile);
 
-        FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(profile.getDataSources()));
+        FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(getDataSources(profile)));
         task.run();
         return task.get().toXmlString();
+    }
+
+    private List<DataSource> getDataSources(Profile profile) {
+        return profile.configuration.collections.stream()
+                .filter(collection -> collection.value == 1)
+                .map(collection -> mongo.getDataSources(collection.id))
+                .flatMap(dataSourceMongoCollection -> StreamSupport.stream(dataSourceMongoCollection.find().spliterator(), false))
+                .collect(Collectors.toList());
     }
 
     public String getPreExperimentDataCollectorYaml() throws Exception {
@@ -251,18 +276,62 @@ public class ConfigurationManager {
         commit(System.getProperty("user.name", "unknown"));
     }
 
-    @Attribute
-    public String[] getDataSources() {
-        Preconditions.checkNotNull(profile);
-
-        return profile.getDataSources().stream()
-                .map(dataSource -> new Gson().toJson(dataSource)).toArray(String[]::new);
+    public static void main(String[] args) {
+        ServerManager.getInstance().start(args, ConfigurationManager.class);
     }
 
+    @Attribute
+    public String getDataSourceCollections() {
+        return new Gson().toJson(StreamSupport
+                .stream(mongo.getMongoDb().listCollections().spliterator(), false)
+                .map(document -> new Document("id", document.get("name")).append("value",document.get("name")))
+                .toArray());
+    }
+
+    @Command(inTypeDesc = "collectionId")
+    public void deleteCollection(String collectionId) {
+        mongo.getMongoDb().getCollection(collectionId).drop();
+    }
+
+    @Command(inTypeDesc = "[collectionId, sourceId]")
+    public void cloneCollection(String[] args) {
+        String targetId = args[0];
+        String sourceId = args[1];
+        Preconditions.checkArgument(!targetId.isEmpty());
+        Preconditions.checkArgument(!sourceId.isEmpty());
+
+        mongo.getMongoDb().getCollection(targetId);
+        mongo.getMongoDb().getCollection(sourceId)
+                .find()
+                .forEach((Block<Document>) mongo.getMongoDb().getCollection(targetId)::insertOne);
+    }
+
+    @Attribute
+    public void setDataSourcesCollection(String collection) {
+        this.collection = collection;
+    }
+
+    @Attribute
+    public String getDataSources() {
+        Preconditions.checkState(collection != null);
+        ;
+
+        return new Gson().toJson(StreamSupport
+                .stream(mongo.getMongoDb().getCollection(collection, DataSource.class).find().spliterator(), false)
+                .toArray());
+    }
+
+    @Command(name = "clone")
+    public void cloneConfiguration() {
+        AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
+        new AntTaskExecutor("clone-configuration", antProject).run();
+    }
 
     @Init
     @StateMachine(endState = DeviceState.STANDBY)
     public void init() throws Exception {
+        mongo = new Mongo();
+
         if (Files.exists(CONFIGURATION_PATH)) {
             update();
         } else {
@@ -274,17 +343,40 @@ public class ConfigurationManager {
         setStatus("ConfigurationManager has been initialized.");
     }
 
-    @Command(name = "clone")
-    public void cloneConfiguration() {
-        AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
-        new AntTaskExecutor("clone-configuration", antProject).run();
-    }
-
     @Delete
     @StateMachine(endState = DeviceState.OFF)
     public void delete() {
+        mongo.close();
+
         AntProject antProject = newAntProject();
         new AntTaskExecutor("push-configuration", antProject).run();
+    }
+
+    @Command(inTypeDesc = "dataSource as JSON")
+    public void insertDataSource(String arg) {
+        Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
+        DataSource dataSource = new Gson().fromJson(arg,DataSource.class);
+
+        mongo.getMongoDb().getCollection(collection, DataSource.class)
+                .insertOne(dataSource);
+    }
+
+    @Command(inTypeDesc = "dataSource as JSON")
+    public void updateDataSource(String arg) {
+        Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
+        DataSource dataSource = new Gson().fromJson(arg, DataSource.class);
+
+        mongo.getMongoDb().getCollection(collection, DataSource.class)
+                .replaceOne(new Document("_id", dataSource.id), dataSource);
+    }
+
+    @Command(inTypeDesc = "dataSource as JSON")
+    public void deleteDataSource(String arg) {
+        Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
+        DataSource dataSource = new Gson().fromJson(arg, DataSource.class);
+
+        mongo.getMongoDb().getCollection(collection, DataSource.class)
+                .deleteOne(new Document("_id", dataSource.id));
     }
 
     @Command
@@ -375,6 +467,21 @@ public class ConfigurationManager {
         AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
         antProject.getProject().setBasedir(CONFIGURATION_PATH.toAbsolutePath().toString());
         return antProject;
+    }
+
+    @Command
+    public void updateProfileCollections(DevVarLongStringArray collections) throws Exception {
+        Preconditions.checkState(profile != null);
+        ;
+        Preconditions.checkArgument(collections.lvalue.length == collections.svalue.length);
+        List<Collection> result = Lists.newArrayListWithCapacity(collections.lvalue.length);
+        for (int i = 0, size = collections.lvalue.length; i < size; ++i) {
+            result.add(new Collection(collections.svalue[i], collections.lvalue[i]));
+        }
+
+        profile.configuration.collections = result;
+
+        profile.dumpConfiguration();
     }
 
     private class PullAndUpdateConfigurationTask implements Runnable {

@@ -20,6 +20,10 @@ public class Configuration implements Xml {
     @ElementList
     public List<DataSource> dataSourceList = new ArrayList<>();
 
+    @ElementList
+    public List<Collection> collections = new ArrayList<>();
+    ;
+
     public void addOrReplaceDataSource(DataSource result) {
         removeDataSource(result);
         dataSourceList.add(result);

@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import de.hzg.wpi.xenv.hq.configuration.ConfigurationManager;
 import de.hzg.wpi.xenv.hq.manager.XenvManager;
 import fr.esrf.Tango.DevFailed;
+import fr.esrf.Tango.DevVarLongStringArray;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,10 @@ import org.tango.server.device.DeviceManager;
 import org.tango.utils.DevFailedUtils;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -164,6 +168,20 @@ public class HeadQuarter {
                 .forEach(Runnable::run);
     }
 
+
+    @Command
+    public void updateProfileCollections(DevVarLongStringArray collections) {
+        configurationManagers.forEach(configurationManager -> {
+            try {
+                configurationManager.updateProfileCollections(collections);
+            } catch (Exception e) {
+                logger.error("Failed to update profile collections configuration");
+                setState(DeviceState.ALARM);
+            }
+
+        });
+    }
+
     @Command
     public void updateAll() {
         updateStatusServerConfiguration();
@@ -186,7 +204,7 @@ public class HeadQuarter {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/StatusServer"));
                 Files.newOutputStream(
-                        conf.resolve("status_server.xml"), StandardOpenOption.CREATE)
+                        conf.resolve("status_server.xml"))
                         .write(configurationManager.getStatusServerXml().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write StatusServer configuration");
@@ -202,11 +220,11 @@ public class HeadQuarter {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/DataFormatServer"));
                 Files.newOutputStream(
-                        conf.resolve("default.nxdl.xml"), StandardOpenOption.CREATE)
+                        conf.resolve("default.nxdl.xml"))
                         .write(configurationManager.getNexusFileXml().getBytes());
 
                 Files.newOutputStream(
-                        conf.resolve("nxpath.mapping"), StandardOpenOption.CREATE)
+                        conf.resolve("nxpath.mapping"))
                         .write(configurationManager.getNexusMapping().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write DataFormatServer configuration");
@@ -222,7 +240,7 @@ public class HeadQuarter {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/CamelIntegration"));
                 Files.newOutputStream(
-                        conf.resolve("routes.xml"), StandardOpenOption.CREATE)
+                        conf.resolve("routes.xml"))
                         .write(configurationManager.getCamelRoutes().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write DataFormatServer configuration");
@@ -238,11 +256,11 @@ public class HeadQuarter {
             try {
                 Path conf = Files.createDirectories(Paths.get("etc/PreExperimentDataCollector"));
                 Files.newOutputStream(
-                        conf.resolve("meta.yaml"), StandardOpenOption.CREATE)
+                        conf.resolve("meta.yaml"))
                         .write(configurationManager.getPreExperimentDataCollectorYaml().getBytes());
 
                 Files.newOutputStream(
-                        conf.resolve("login.properties"), StandardOpenOption.CREATE)
+                        conf.resolve("login.properties"))
                         .write(configurationManager.getPreExperimentDataCollectorLoginProperties().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write PreExperimentDataCollector configuration");

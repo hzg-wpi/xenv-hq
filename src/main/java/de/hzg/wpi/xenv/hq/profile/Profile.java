@@ -34,7 +34,7 @@ public class Profile {
     public static final String META_YAML = "meta.yaml";
     public final Profile parent;
     public final String name;
-    public final Path path;
+    public transient final Path path;
     public final Configuration configuration;
     public /*final*/ Manager manager;
 
