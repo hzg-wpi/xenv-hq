@@ -3,6 +3,7 @@ package de.hzg.wpi.xenv.hq.configuration;
 import com.mongodb.client.MongoCollection;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -73,6 +74,7 @@ public class ConfigurationTest {
     }
 
     @Test
+    @Ignore
     public void testMongo() {
         Mongo mongo = new Mongo();
 
