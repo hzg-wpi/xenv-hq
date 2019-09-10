@@ -3,8 +3,6 @@ package de.hzg.wpi.xenv.hq.configuration;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.IndexOptions;
-import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 
@@ -41,7 +39,7 @@ public class Mongo implements Closeable {
 
     public MongoCollection<DataSource> getDataSources(String collection) {
         MongoCollection<DataSource> result = mongoDb.getCollection(collection, DataSource.class);
-        result.withCodecRegistry(pojoCodecRegistry).createIndex(new Document("id", 1), new IndexOptions().unique(true));
+        result.withCodecRegistry(pojoCodecRegistry);
         return result;
     }
 

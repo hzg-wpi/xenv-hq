@@ -1,6 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.mongodb.Block;
 import com.mongodb.client.MongoCollection;
@@ -18,6 +19,7 @@ import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
+import fr.esrf.Tango.DevVarLongStringArray;
 import org.bson.Document;
 import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
@@ -49,6 +51,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
@@ -134,7 +137,7 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(profile);
         NexusXml nexusXml = profile.getNexusTemplateXml();
         FutureTask<NexusXml> task = new FutureTask<>(
-                new NexusXmlGenerator(profile.getDataSources(), nexusXml));
+                new NexusXmlGenerator(getDataSources(profile), nexusXml));
         task.run();
 
         return task.get();
@@ -205,7 +208,7 @@ public class ConfigurationManager {
 
         StringWriter out = new StringWriter();
 
-        FutureTask<Properties> task = new FutureTask<>(new MappingGenerator(profile.getDataSources()));
+        FutureTask<Properties> task = new FutureTask<>(new MappingGenerator(getDataSources(profile)));
         task.run();
         task.get().store(out, null);
 
@@ -216,9 +219,17 @@ public class ConfigurationManager {
     public String getStatusServerXml() throws Exception {
         Preconditions.checkNotNull(profile);
 
-        FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(profile.getDataSources()));
+        FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(getDataSources(profile)));
         task.run();
         return task.get().toXmlString();
+    }
+
+    private List<DataSource> getDataSources(Profile profile) {
+        return profile.configuration.collections.stream()
+                .filter(collection -> collection.value == 1)
+                .map(collection -> mongo.getDataSources(collection.id))
+                .flatMap(dataSourceMongoCollection -> StreamSupport.stream(dataSourceMongoCollection.find().spliterator(), false))
+                .collect(Collectors.toList());
     }
 
     public String getPreExperimentDataCollectorYaml() throws Exception {
@@ -456,6 +467,21 @@ public class ConfigurationManager {
         AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
         antProject.getProject().setBasedir(CONFIGURATION_PATH.toAbsolutePath().toString());
         return antProject;
+    }
+
+    @Command
+    public void updateProfileCollections(DevVarLongStringArray collections) {
+        Preconditions.checkState(profile != null);
+        ;
+        Preconditions.checkArgument(collections.lvalue.length == collections.svalue.length);
+        List<Collection> result = Lists.newArrayListWithCapacity(collections.lvalue.length);
+        for (int i = 0, size = collections.lvalue.length; i < size; ++i) {
+            result.add(new Collection(collections.svalue[i], collections.lvalue[i]));
+        }
+
+        profile.configuration.collections = result;
+
+        //TODO commmit
     }
 
     private class PullAndUpdateConfigurationTask implements Runnable {

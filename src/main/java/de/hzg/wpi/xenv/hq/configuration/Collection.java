@@ -13,4 +13,12 @@ public class Collection {
     public String id;
     @Attribute
     public int value;
+
+    public Collection() {
+    }
+
+    public Collection(String collection, int value) {
+        this.id = collection;
+        this.value = value;
+    }
 }

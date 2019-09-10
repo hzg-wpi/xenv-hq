@@ -1,9 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.IndexOptions;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
-import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,6 +19,7 @@ public class ConfigurationTest {
     public void before() throws Exception {
         instance = XmlHelper.fromString(
                 "<Configuration profile='test'>\n" +
+                        "    <collections/>\n" +
                         "    <dataSourceList>\n" +
                         "        <DataSource id='0'" +
                         "                    nxPath='/entry'\n" +
