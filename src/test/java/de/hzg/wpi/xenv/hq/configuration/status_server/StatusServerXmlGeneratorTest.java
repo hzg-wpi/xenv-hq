@@ -16,6 +16,7 @@ public class StatusServerXmlGeneratorTest {
     public void call() throws Exception {
         Configuration configuration = XmlHelper.fromString(
                 "<Configuration profile='test'>\n" +
+                        "    <collections/>\n" +
                         "    <dataSourceList>\n" +
                         "        <DataSource id='0'" +
                         "                    nxPath='/entry'\n" +
@@ -45,6 +46,7 @@ public class StatusServerXmlGeneratorTest {
     public void call_multiple() throws Exception {
         Configuration configuration = XmlHelper.fromString(
                 "<Configuration profile='test'>\n" +
+                        "    <collections/>\n" +
                         "    <dataSourceList>\n" +
                         "        <DataSource id='1'" +
                         "                    nxPath='/entry'\n" +
@@ -83,6 +85,7 @@ public class StatusServerXmlGeneratorTest {
     public void call_external_predator() throws Exception {
         Configuration configuration = XmlHelper.fromString(
                 "<Configuration profile='test'>\n" +
+                        "    <collections/>\n" +
                         "    <dataSourceList>\n" +
                         "        <DataSource id='1'" +
                         "                    nxPath='/entry/external'\n" +
