@@ -1,16 +1,21 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.mongodb.client.MongoCollection;
 import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
+import junit.framework.TestCase;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.tango.server.device.DeviceManager;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -100,6 +105,38 @@ public class ConfigurationTest {
         );
 
         mongo.close();
+    }
+
+    @Test
+    @Ignore
+    public void testManualMergeOfCollections() {
+        try (Mongo mongo = new Mongo()) {
+
+            MongoCollection<Document> test = mongo.getMongoDb().getCollection("test");
+
+//        <dataSource id="1" nxPath="/entry/hardware/petra" type="log" src="tine:/PETRA/Idc/Buffer-0/I.SCH" pollRate="0" dataType="float64"/>
+            test.insertOne(
+                    new Document("value", 123)
+            );
+
+            MongoCollection<Document> test1 = mongo.getMongoDb().getCollection("test");
+
+            test1 = mongo.getMongoDb().getCollection("test1");
+
+//        <dataSource id="1" nxPath="/entry/hardware/petra" type="log" src="tine:/PETRA/Idc/Buffer-0/I.SCH" pollRate="0" dataType="float64"/>
+            test1.insertOne(
+                    new Document("value", 456)
+            );
+
+            List<Document> result = Lists.newArrayList("test", "test1").stream()
+                    .map(collection -> mongo.getMongoDb().getCollection(collection))
+                    .flatMap(mongoCollection -> StreamSupport.stream(mongoCollection.find().spliterator(), false))
+                    .collect(Collectors.toList());
+
+            TestCase.assertEquals(2, result.size());
+            TestCase.assertEquals(123, result.get(0).get("value"));
+            TestCase.assertEquals(456, result.get(1).get("value"));
+        }
     }
 
     @Test
