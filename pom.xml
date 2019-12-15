@@ -34,7 +34,7 @@
             <dependency>
                 <groupId>de.hzg.wpi.tango</groupId>
                 <artifactId>tango-server-bom</artifactId>
-                <version>20</version>
+                <version>24</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -96,8 +96,8 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.tango</groupId>
-            <artifactId>ezTangORB</artifactId>
+            <groupId>de.hzg.wpi.tango.client.api</groupId>
+            <artifactId>ezTangoAPI</artifactId>
         </dependency>
         <dependency>
             <groupId>hzg.wpn</groupId>
@@ -106,7 +106,6 @@
         <dependency>
             <groupId>org.tango-controls</groupId>
             <artifactId>JTangoServer</artifactId>
-            <version>9.5.17-hzg.14</version>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
