@@ -76,9 +76,9 @@ public class ConfigurationManager {
 
     @DeviceManagement
     private DeviceManager deviceManager;
-    @State(isPolled = true)
+    @State(isPolled = true, pollingPeriod = 3000)
     private volatile DeviceState state;
-    @Status(isPolled = true)
+    @Status(isPolled = true, pollingPeriod = 3000)
     private volatile String status;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -120,7 +120,6 @@ public class ConfigurationManager {
 
     public void setState(DeviceState state) {
         this.state = state;
-        new StateChangeEventPusher(state, deviceManager).run();
     }
 
     public String getStatus() {
@@ -128,9 +127,7 @@ public class ConfigurationManager {
     }
 
     public void setStatus(String status) {
-        logger.debug(status);
-        this.status = status;
-        new ChangeEventPusher<>("Status", status, deviceManager).run();
+        this.status = String.format("%d: %s", System.currentTimeMillis(), status);
     }
 
     private NexusXml getNexusFile() throws Exception {
@@ -328,7 +325,6 @@ public class ConfigurationManager {
     }
 
     @Init
-    @StateMachine(endState = DeviceState.STANDBY)
     public void init() throws Exception {
         mongo = new Mongo();
 
@@ -340,16 +336,18 @@ public class ConfigurationManager {
 
         profile = null;
 
-        setStatus("ConfigurationManager has been initialized.");
+        deviceManager.pushStateChangeEvent(DeviceState.STANDBY);
+        deviceManager.pushStatusChangeEvent("ConfigurationManager has been initialized.");
     }
 
     @Delete
-    @StateMachine(endState = DeviceState.OFF)
     public void delete() {
         mongo.close();
 
         AntProject antProject = newAntProject();
         new AntTaskExecutor("push-configuration", antProject).run();
+        deviceManager.pushStateChangeEvent(DeviceState.OFF);
+        deviceManager.pushStatusChangeEvent(DeviceState.OFF.name());
     }
 
     @Command(inTypeDesc = "dataSource as JSON")
@@ -389,8 +387,8 @@ public class ConfigurationManager {
         Preconditions.checkNotNull(name);
         this.profile = profileManager.loadProfile(name);
 
-        setState(DeviceState.ON);
-        setStatus("Profile set to " + name);
+        deviceManager.pushStateChangeEvent(DeviceState.ON);
+        deviceManager.pushStatusChangeEvent("Profile set to " + name);
     }
 
     @Command(inTypeDesc =
@@ -493,7 +491,7 @@ public class ConfigurationManager {
                 new AntTaskExecutor("update-configuration", antProject).run();
             } catch (Exception e) {
                 logger.error("Failed to pull configuration");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
         }
     }
@@ -506,7 +504,7 @@ public class ConfigurationManager {
                 new AntTaskExecutor("push-configuration", antProject).run();
             } catch (Exception e) {
                 logger.error("Failed to push configuration");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
         }
     }

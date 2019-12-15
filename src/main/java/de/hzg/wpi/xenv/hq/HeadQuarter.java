@@ -40,12 +40,15 @@ public class HeadQuarter {
 
     private final Logger logger = LoggerFactory.getLogger(HeadQuarter.class);
 
-    @State(isPolled = true)
+    @State(isPolled = true, pollingPeriod = 3000)
     private DeviceState state;
-    @Status(isPolled = true)
+    @Status(isPolled = true, pollingPeriod = 3000)
     private String status;
     @DeviceManagement
     public DeviceManager deviceManager;
+    public void setDeviceManager(DeviceManager deviceManager) {
+        this.deviceManager = deviceManager;
+    }
     private List<XenvManager> xenvManagers;
     private List<ConfigurationManager> configurationManagers;
 
@@ -59,8 +62,6 @@ public class HeadQuarter {
         ServerManager.getInstance().addClass("HeadQuarter", HeadQuarter.class);
 
         ServerManager.getInstance().start(args, HeadQuarter.class.getSimpleName());
-        ServerManagerUtils.writePidFile(
-                Paths.get(System.getProperty("xenv.hq.pidFile", System.getProperty("user.dir"))));
     }
 
     private static void createTempDirectory() throws IOException {
@@ -82,17 +83,20 @@ public class HeadQuarter {
     }
 
     @Init
-    @StateMachine(endState = DeviceState.STANDBY)
     public void init() {
         xenvManagers = ServerManagerUtils.getBusinessObjects(ServerManager.getInstance().getInstanceName(), XenvManager.class);
         configurationManagers = ServerManagerUtils.getBusinessObjects(ServerManager.getInstance().getInstanceName(), ConfigurationManager.class);
 
         Preconditions.checkState(!xenvManagers.isEmpty());
         Preconditions.checkState(!configurationManagers.isEmpty());
+
+        deviceManager.pushStateChangeEvent(DeviceState.STANDBY);
     }
 
-    public void setDeviceManager(DeviceManager deviceManager) {
-        this.deviceManager = deviceManager;
+    @Delete
+    public void delete(){
+        deviceManager.pushStateChangeEvent(DeviceState.OFF);
+        deviceManager.pushStatusChangeEvent(DeviceState.OFF.name());
     }
 
     @Command
@@ -102,7 +106,7 @@ public class HeadQuarter {
                 FileUtils.deleteDirectory(Paths.get(s).toFile());
             } catch (IOException e) {
                 logger.error("Failed to stop StatusServer configuration");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
         });
 
@@ -111,12 +115,13 @@ public class HeadQuarter {
 
     @Command
     public void load(String profile) {
-        logger.trace("Loading profile " + profile);
+        logger.debug("Loading profile " + profile);
         xenvManagers.forEach(xenvManager -> {
             try {
                 xenvManager.loadProfile(profile);
             } catch (Exception e) {
                 logger.error("XenvManager failed to load configuration", e);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
                 xenvManager.setState(DeviceState.FAULT);
                 xenvManager.setStatus("XenvManager failed to load configuration");
             }
@@ -127,12 +132,15 @@ public class HeadQuarter {
                 configurationManager.loadProfile(profile);
             } catch (Exception e) {
                 logger.error("ConfigManager failed to load configuration", e);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
                 configurationManager.setState(DeviceState.FAULT);
                 configurationManager.setStatus("ConfigManager failed to load configuration");
             }
         });
-        setState(DeviceState.ON);
-        setStatus("Profile set to " + profile);
+        if(getState() != DeviceState.ALARM) {
+            deviceManager.pushStateChangeEvent(DeviceState.ON);
+            deviceManager.pushStatusChangeEvent("Profile set to " + profile);
+        }
 
         logger.trace("Done.");
     }
@@ -176,7 +184,7 @@ public class HeadQuarter {
                 configurationManager.updateProfileCollections(collections);
             } catch (Exception e) {
                 logger.error("Failed to update profile collections configuration");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
 
         });
@@ -208,7 +216,7 @@ public class HeadQuarter {
                         .write(configurationManager.getStatusServerXml().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write StatusServer configuration");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
 
         });
@@ -228,7 +236,7 @@ public class HeadQuarter {
                         .write(configurationManager.getNexusMapping().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write DataFormatServer configuration");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
 
         });
@@ -244,7 +252,7 @@ public class HeadQuarter {
                         .write(configurationManager.getCamelRoutes().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write DataFormatServer configuration");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
 
         });
@@ -264,7 +272,7 @@ public class HeadQuarter {
                         .write(configurationManager.getPreExperimentDataCollectorLoginProperties().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write PreExperimentDataCollector configuration");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
 
         });
@@ -279,7 +287,7 @@ public class HeadQuarter {
                 DevFailedUtils.logDevFailed(devFailed, logger);
             } catch (NoSuchCommandException | TangoProxyException e) {
                 logger.error("Failed to stop StatusServer configuration");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
         });
 
@@ -298,7 +306,7 @@ public class HeadQuarter {
                 DevFailedUtils.logDevFailed(devFailed, logger);
             } catch (NoSuchCommandException | TangoProxyException e) {
                 logger.error("Failed to stop DataFormatServer");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
         });
 
@@ -317,7 +325,7 @@ public class HeadQuarter {
                 DevFailedUtils.logDevFailed(devFailed, logger);
             } catch (NoSuchCommandException | TangoProxyException e) {
                 logger.error("Failed to stop DataFormatServer");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
         });
 
@@ -337,7 +345,7 @@ public class HeadQuarter {
                 setState(DeviceState.ALARM);
             } catch (NoSuchCommandException | TangoProxyException e) {
                 logger.error("Failed to stop DataFormatServer");
-                setState(DeviceState.ALARM);
+                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
             }
         });
 
@@ -360,7 +368,6 @@ public class HeadQuarter {
 
     public void setState(DeviceState state) {
         this.state = state;
-        new StateChangeEventPusher(state, deviceManager).run();
     }
 
     public String getStatus() {
@@ -368,7 +375,6 @@ public class HeadQuarter {
     }
 
     public void setStatus(String status) {
-        this.status = status;
-        new ChangeEventPusher<>("Status", status, deviceManager).run();
+        this.status = String.format("%d: %s",System.currentTimeMillis(),status);
     }
 }

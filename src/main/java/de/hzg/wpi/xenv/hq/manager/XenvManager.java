@@ -19,8 +19,6 @@ import org.tango.client.ez.proxy.NoSuchCommandException;
 import org.tango.client.ez.proxy.TangoProxies;
 import org.tango.client.ez.proxy.TangoProxy;
 import org.tango.client.ez.proxy.TangoProxyException;
-import org.tango.server.ChangeEventPusher;
-import org.tango.server.StateChangeEventPusher;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
 
@@ -43,9 +41,9 @@ public class XenvManager {
     @DeviceManagement
     private DeviceManager deviceManager;
 
-    @State(isPolled = true)
+    @State(isPolled = true, pollingPeriod = 3000)
     private volatile DeviceState state;
-    @Status(isPolled = true)
+    @Status(isPolled = true, pollingPeriod = 3000)
     private volatile String status;
 
     private final Logger logger = LoggerFactory.getLogger(XenvManager.class);
@@ -84,6 +82,12 @@ public class XenvManager {
         );
     }
 
+    @Delete
+    public void delete(){
+        deviceManager.pushStateChangeEvent(DeviceState.OFF);
+        deviceManager.pushStatusChangeEvent(DeviceState.OFF.name());
+    }
+
     @Command
     public void loadProfile(String name) throws Exception {
         Preconditions.checkNotNull(name, "Set profile first!");
@@ -95,12 +99,12 @@ public class XenvManager {
                 TangoServers.class
         );
 
-        setState(DeviceState.ON);
-        setStatus("Profile set to " + name);
+        deviceManager.pushStateChangeEvent(DeviceState.ON);
+        deviceManager.pushStatusChangeEvent("Profile set to " + name);
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
-    public String startServer(String executable) {
+    public void startServer(String executable) {
         Preconditions.checkNotNull(configuration, "load configuration first!");
 
 
@@ -115,15 +119,13 @@ public class XenvManager {
             new AntTaskExecutor("fetch-executable-jar", antProject).run();
             new AntTaskExecutor("run-executable", antProject).run();
 
-            //TODO send event
+            deviceManager.pushStatusChangeEvent(String.format("Server %s has been launched.", executable));
         };
         executorService.execute(runnable);
-
-        return "Done.";
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
-    public String stopServer(String executable) throws DevFailed, NoSuchCommandException, TangoProxyException {
+    public void stopServer(String executable) throws DevFailed, NoSuchCommandException, TangoProxyException {
         Preconditions.checkNotNull(configuration, "load configuration first!");
 
         AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
@@ -136,9 +138,7 @@ public class XenvManager {
                 .resolve(
                         shortClassName + ".pid");
 
-        if (!Files.exists(pidFile))
-            tryToKillViaDServer(shortClassName);
-        else
+        if (Files.exists(pidFile)) {
             try {
                 String pid = new String(
                         Files.readAllBytes(
@@ -150,13 +150,15 @@ public class XenvManager {
                 logger.warn("Failed to kill executable by pid due to exception", e);
                 new AntTaskExecutor("force-kill-executable", antProject).run();
             }
+        } else {
+            logger.warn("{} file does not exists. Trying to kill {} via DServer",pidFile.toString(),executable);
+            tryToKillViaDServer(shortClassName);
+        }
 
-        return "Done.";
+        deviceManager.pushStatusChangeEvent(String.format("Server %s has been stopped", executable));
     }
 
     private void tryToKillViaDServer(String shortClassName) throws TangoProxyException, DevFailed, org.tango.client.ez.proxy.NoSuchCommandException {
-        logger.info("Trying to kill via DServer");
-
         TangoProxy dserver = TangoProxies.newDeviceProxyWrapper(
                 DeviceProxyFactory.get("dserver/" + shortClassName + "/" + configuration.instance_name, configuration.tango_host));
 
@@ -206,7 +208,6 @@ public class XenvManager {
 
     public void setState(DeviceState state) {
         this.state = state;
-        new StateChangeEventPusher(state, deviceManager).run();
     }
 
     public String getStatus() {
@@ -214,7 +215,6 @@ public class XenvManager {
     }
 
     public void setStatus(String status) {
-        this.status = status;
-        new ChangeEventPusher<>("Status", status, deviceManager).run();
+        this.status = String.format("%d: %s",System.currentTimeMillis(),status);
     }
 }
