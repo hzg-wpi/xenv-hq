@@ -34,7 +34,7 @@
             <dependency>
                 <groupId>de.hzg.wpi.tango</groupId>
                 <artifactId>tango-server-bom</artifactId>
-                <version>24</version>
+                <version>25</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
