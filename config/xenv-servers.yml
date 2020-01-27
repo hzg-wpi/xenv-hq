@@ -1,0 +1,28 @@
+status_server:
+  server_name: StatusServer
+  main_class: wpn.hdri.ss.tango.StatusServer2
+  version: 2.1.17
+  ram: 16G
+  jmx_port: 3331
+  url: https://github.com/hzg-wpi/status-server/releases/download/StatusServer-2.1.17
+data_format_server:
+  server_name: DataFormatServer
+  main_class: hzg.wpn.tango.DataFormatServer
+  version: 4.16
+  ram: 1G
+  jmx_port: 3332
+  url: https://github.com/hzg-wpi/data-format-server/releases/download/DataFormatServer-4.16
+camel_integration:
+  server_name: CamelIntegration
+  main_class: hzg.wpn.tango.camel.CamelIntegration
+  version: 1.12
+  ram: 1G
+  jmx_port: 3333
+  url: https://github.com/hzg-wpi/camel-integration/releases/download/CamelIntegration-1.12
+predator:
+  server_name: PreExperimentDataCollector
+  main_class: hzg.wpn.tango.PreExperimentDataCollector
+  version: 4.0.16
+  ram: 4G
+  jmx_port: 3334
+  url: https://github.com/hzg-wpi/pre-experiment-data-collector/releases/download/PreExperimentDataCollector-4.0.16

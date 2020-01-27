@@ -73,6 +73,11 @@ public class HeadQuarter {
 
     private static void extractResources() throws IOException {
         Files.copy(
+                HeadQuarter.class.getClassLoader().getResourceAsStream("ant/Executable_template"),
+                Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("Executable_template"),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        Files.copy(
                 HeadQuarter.class.getClassLoader().getResourceAsStream("ant/build.xml"),
                 Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("build.xml"),
                 StandardCopyOption.REPLACE_EXISTING);

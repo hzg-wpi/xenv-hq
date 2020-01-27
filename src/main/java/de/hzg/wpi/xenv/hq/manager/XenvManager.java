@@ -77,7 +77,7 @@ public class XenvManager {
         configuration = null;
 
         servers = YamlHelper.fromYamlFile(
-                Paths.get("configuration/etc/xenv-servers.yml"),
+                Paths.get("config/xenv-servers.yml"),
                 TangoServers.class
         );
     }
@@ -166,6 +166,7 @@ public class XenvManager {
     }
 
     private TangoServer populateAntProjectWithProperties(Manager configuration, String executable, AntProject antProject) {
+        antProject.getProject().setProperty("executable_template_dir", System.getProperty(XENV_HQ_TMP_DIR));
         antProject.getProject().setProperty("tango_host", configuration.tango_host);
         antProject.getProject().setProperty("instance_name", configuration.instance_name);
         antProject.getProject().setProperty("tine_home", configuration.tine_home);

@@ -2,12 +2,12 @@
 <configuration>
     <jmxConfigurator/>
 
-    <property name="pattern" value="%p %d [%t - %X{deviceName} - %C{1}] %logger{36}.%M:%L - %m%n"/>
+    <property name="layoutPattern" value="%p %d [%t - %X{deviceName} - %C{1}] %logger{36}.%M:%L - %m%n"/>
     <property name="log.level" value="${LOG_LEVEL:-DEBUG}"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <pattern>${pattern}</pattern>
+            <pattern>${layoutPattern}</pattern>
         </layout>
     </appender>
 
@@ -30,7 +30,7 @@
                 </triggeringPolicy>
                 <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
                     <layout class="ch.qos.logback.classic.PatternLayout">
-                        <pattern>${pattern}</pattern>
+                        <pattern>${layoutPattern}</pattern>
                     </layout>
                 </encoder>
             </appender>
@@ -41,15 +41,17 @@
         <appender-ref ref="SIFT"/>
     </appender>
 
+    <logger name="org.apache" level="ERROR"/>
     <logger name="org.jacorb" level="ERROR"/>
     <logger name="org.tango" level="ERROR"/>
-    <logger name="org.apache.tools.ant" level="INFO"/>
+    <logger name="org.tango.rest" level="${log.level}"/>
+    <logger name="org.tango.web" level="${log.level}"/>
+    <logger name="de.hzg.wpi" level="${log.level}"/>
+    <logger name="hzg.wpn" level="${log.level}"/>
     <logger name="org.quartz" level="ERROR"/>
     <logger name="net.sf.ehcache" level="ERROR"/>
-    <logger name="de.hzg.wpi" level="${log.level}"/>
-    <logger name="org.mongodb.driver" level="ERROR"/>
 
-    <root level="ERROR">
+    <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ASYNC"/>
     </root>

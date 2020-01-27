@@ -94,7 +94,7 @@
 
     <target name="prepare-executable">
         <copy tofile="bin/${executable}" overwrite="true">
-            <fileset dir="${basedir}/configuration/bin">
+            <fileset dir="${executable_template_dir}">
                 <include name="Executable_template"/>
             </fileset>
             <filterset>

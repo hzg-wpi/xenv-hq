@@ -1,0 +1,34 @@
+#!/bin/bash
+/usr/bin/java -version
+
+TANGO_HOST=@TANGO_HOST@
+SERVER_NAME=@SERVER_NAME@
+INSTANCE_NAME=@INSTANCE_NAME@
+MAIN_CLASS=@MAIN_CLASS@
+VERSION=@VERSION@
+JMX_PORT=@JMX_PORT@
+TINE_HOME=@TINE_HOME@
+LOG_HOME=@LOG_HOME@
+LOG_LEVEL=@LOG_LEVEL@
+MAX_RAM=@RAM@
+XENV_ROOT=@XENV_ROOT@
+echo "Using TANGO_HOST=$TANGO_HOST"
+echo "Using SERVER_NAME=$SERVER_NAME"
+echo "Using INSTANCE_NAME=$INSTANCE_NAME"
+echo "Using MAIN_CLASS=$MAIN_CLASS"
+echo "Using VERSION=$VERSION"
+echo "Using JMX_PORT=$JMX_PORT"
+echo "Using TINE_HOME=$TINE_HOME"
+echo "Using LOG_HOME=$LOG_HOME"
+echo "Using LOG_LEVEL=$LOG_LEVEL"
+echo "Using MAX_RAM=$MAX_RAM"
+
+echo "Using XENV_ROOT=$XENV_ROOT"
+
+JAVA_OPTS="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$LOG_HOME/$SERVER_NAME.hprof -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:$LOG_HOME/$SERVER_NAME.loggc -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -server -Xmx$MAX_RAM -Xshare:off -XX:+UseG1GC -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+echo "Using JAVA_OPTS=$JAVA_OPTS"
+JAVA_ARGS="-DTANGO_HOST=$TANGO_HOST -DXENV_ROOT=$XENV_ROOT -DLOG_HOME=$LOG_HOME -DLOG_LEVEL=$LOG_LEVEL -Dlogback.configurationFile=../configuration/etc/logback.xml -jar $SERVER_NAME-$VERSION.jar $INSTANCE_NAME $MAIN_CLASS $INSTANCE_NAME"
+echo "Using JAVA_ARGS=$JAVA_ARGS"
+
+
+/usr/bin/java $JAVA_OPTS $JAVA_ARGS > $LOG_HOME/$SERVER_NAME.out 2>&1 &
