@@ -1,6 +1,5 @@
 package de.hzg.wpi.xenv.hq.configuration.camel;
 
-import de.hzg.wpi.xenv.hq.util.xml.Xml;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Namespace;
 import org.simpleframework.xml.Root;
@@ -14,7 +13,7 @@ import java.util.List;
  */
 @Root(name = "routes")
 @Namespace(reference = "http://camel.apache.org/schema/spring")
-public class CamelRoutesXml implements Xml {
+public class CamelRoutesXml {
     @ElementList(inline = true)
     public List<CamelRoute> routes = new ArrayList<>();
 }

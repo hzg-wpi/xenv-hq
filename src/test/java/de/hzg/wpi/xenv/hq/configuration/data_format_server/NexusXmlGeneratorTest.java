@@ -93,7 +93,7 @@ public class NexusXmlGeneratorTest {
         assertEquals("X", result.groups.get(0).name);
         assertEquals("Y", result.groups.get(1).name);
 
-        System.out.println(nexusXml1.toXmlString());
+        System.out.println(XmlHelper.toXmlString(nexusXml1));
     }
 
     @Test

@@ -1,7 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.status_server;
 
 import com.google.common.collect.Lists;
-import de.hzg.wpi.xenv.hq.util.xml.Xml;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
@@ -13,7 +12,7 @@ import java.util.List;
  * @since 2/21/19
  */
 @Root(name = "StatusServer")
-public class StatusServerXml implements Xml {
+public class StatusServerXml {
     @Attribute(name = "use-aliases")
     public boolean useAliases;
     @ElementList(required = false)

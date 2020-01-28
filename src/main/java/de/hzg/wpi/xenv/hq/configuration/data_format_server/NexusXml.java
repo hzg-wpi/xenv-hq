@@ -1,7 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
 import com.google.common.collect.Lists;
-import de.hzg.wpi.xenv.hq.util.xml.Xml;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
@@ -12,7 +11,7 @@ import java.util.List;
  * @since 2/20/19
  */
 @Root(name = "definition")
-public class NexusXml implements Xml {
+public class NexusXml {
     public static final String NX_COLLECTION = "NXcollection";
     public static final String NX_LOG = "NXlog";
 

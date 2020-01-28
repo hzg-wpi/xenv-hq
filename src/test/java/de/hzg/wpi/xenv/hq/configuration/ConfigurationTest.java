@@ -3,6 +3,11 @@ package de.hzg.wpi.xenv.hq.configuration;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.mongodb.client.MongoCollection;
+import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoute;
+import de.hzg.wpi.xenv.hq.configuration.camel.CamelRouteEndpoint;
+import de.hzg.wpi.xenv.hq.configuration.mongo.CamelDb;
+import de.hzg.wpi.xenv.hq.configuration.mongo.DataSourceDb;
+import de.hzg.wpi.xenv.hq.configuration.mongo.Mongo;
 import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import junit.framework.TestCase;
@@ -57,7 +62,7 @@ public class ConfigurationTest {
 
     @Test
     public void toXmlString() throws Exception {
-        String result = instance.toXmlString();
+        String result = XmlHelper.toXmlString(instance);
 
         System.out.println(result);
     }
@@ -88,7 +93,7 @@ public class ConfigurationTest {
     @Test
     @Ignore
     public void testMongo() {
-        Mongo mongo = new Mongo();
+        Mongo mongo = new DataSourceDb();
 
         MongoCollection<DataSource> dataSources = mongo.getMongoDb().getCollection("test", DataSource.class);
 
@@ -109,8 +114,32 @@ public class ConfigurationTest {
 
     @Test
     @Ignore
+    public void testCamel() {
+        Mongo mongo = new CamelDb();
+
+        MongoCollection<CamelRoute> routes = mongo.getMongoDb().getCollection("routes", CamelRoute.class);
+
+        CamelRoute route = new CamelRoute();
+
+        route.id = "test-route-0";
+
+        route.from = new CamelRouteEndpoint();
+        route.to = new CamelRouteEndpoint();
+
+        route.from.uri = "tango://hzgpp07ctcon1:10000/p07/xenv/status_server?pipe=status_server_pipe&amp;poll=true";
+        route.to.uri = "tango://hzgpp07ctcon1:10000/p07/xenv/data_format_server?pipe=pipe";
+
+        routes.insertOne(
+                route
+        );
+
+        mongo.close();
+    }
+
+    @Test
+    @Ignore
     public void testManualMergeOfCollections() {
-        try (Mongo mongo = new Mongo()) {
+        try (Mongo mongo = new DataSourceDb()) {
 
             MongoCollection<Document> test = mongo.getMongoDb().getCollection("test");
 
@@ -142,11 +171,11 @@ public class ConfigurationTest {
     @Test
     @Ignore
     public void migrateToMondo() throws Exception {
-        System.setProperty("mongodb.host", "hzgxenvtest");
+        System.setProperty("mongodb.host", "hzgpp05xenv");
 
         Gson gson = new Gson();
 
-        try (Mongo mongo = new Mongo()) {
+        try (Mongo mongo = new DataSourceDb()) {
             ConfigurationManager manager = new ConfigurationManager();
             manager.setDeviceManager(mock(DeviceManager.class));
 

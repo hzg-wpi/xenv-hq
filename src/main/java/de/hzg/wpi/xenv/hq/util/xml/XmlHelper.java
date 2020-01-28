@@ -7,6 +7,7 @@ import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -32,5 +33,28 @@ public class XmlHelper {
         File source = new File(path.toAbsolutePath().toUri());
 
         return serializer.read(clazz, source);
+    }
+
+    public static String toXmlString(Object o) {
+        Serializer serializer = new Persister();
+        StringWriter result = new StringWriter();
+
+        try {
+            serializer.write(o, result);
+            return result.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void toXml(Object o, Path path) {
+        Serializer serializer = new Persister();
+        File result = path.toAbsolutePath().toFile();
+
+        try {
+            serializer.write(o, result);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

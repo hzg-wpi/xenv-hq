@@ -1,6 +1,5 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
-import de.hzg.wpi.xenv.hq.util.xml.Xml;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
@@ -13,7 +12,7 @@ import java.util.List;
  * @since 2/19/19
  */
 @Root(strict = false)
-public class Configuration implements Xml {
+public class Configuration {
     @Attribute(required = false)
     public String parent;
 

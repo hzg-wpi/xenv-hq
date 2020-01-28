@@ -11,10 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.tango.DeviceState;
 import org.tango.client.ez.proxy.NoSuchCommandException;
 import org.tango.client.ez.proxy.TangoProxyException;
-import org.tango.server.ChangeEventPusher;
 import org.tango.server.ServerManager;
 import org.tango.server.ServerManagerUtils;
-import org.tango.server.StateChangeEventPusher;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
 import org.tango.utils.DevFailedUtils;
@@ -254,7 +252,7 @@ public class HeadQuarter {
                 Path conf = Files.createDirectories(Paths.get("etc/CamelIntegration"));
                 Files.newOutputStream(
                         conf.resolve("routes.xml"))
-                        .write(configurationManager.getCamelRoutes().getBytes());
+                        .write(configurationManager.getCamelRoutesXml().getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write DataFormatServer configuration");
                 deviceManager.pushStateChangeEvent(DeviceState.ALARM);

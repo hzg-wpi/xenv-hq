@@ -5,13 +5,17 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.mongodb.Block;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
 import de.hzg.wpi.xenv.hq.HeadQuarter;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
+import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoute;
 import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoutesXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
+import de.hzg.wpi.xenv.hq.configuration.mongo.CamelDb;
+import de.hzg.wpi.xenv.hq.configuration.mongo.DataSourceDb;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXml;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXmlGenerator;
 import de.hzg.wpi.xenv.hq.manager.Manager;
@@ -20,15 +24,15 @@ import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
 import fr.esrf.Tango.DevVarLongStringArray;
+import org.bson.BsonDocument;
+import org.bson.BsonString;
 import org.bson.Document;
 import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.tango.DeviceState;
-import org.tango.server.ChangeEventPusher;
 import org.tango.server.ServerManager;
-import org.tango.server.StateChangeEventPusher;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
 
@@ -46,6 +50,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -69,7 +74,8 @@ public class ConfigurationManager {
     private final JsonWriterSettings settings = JsonWriterSettings.builder()
             .int64Converter((value, writer) -> writer.writeNumber(value.toString()))
             .build();
-    private Mongo mongo;
+    private final boolean parallel = false;
+    private DataSourceDb dataSourcesDb;
     private MongoCollection<Document> dataSources;
     private String collection;
 
@@ -87,9 +93,7 @@ public class ConfigurationManager {
     @Attribute
     @AttributeProperties(format = "xml")
     public String nexusFileTemplate;
-    @Attribute
-    @AttributeProperties(format = "xml")
-    public String camelRoutes;
+
     @Attribute
     @AttributeProperties(format = "yaml")
     public String preExperimentDataCollectorYaml;
@@ -140,11 +144,7 @@ public class ConfigurationManager {
         return task.get();
     }
 
-    @Attribute
-    @AttributeProperties(format = "xml")
-    public String getNexusFileXml() throws Exception {
-        return getNexusFile().toXmlString();
-    }
+    private CamelDb camelDb;
 
     @Attribute
     @AttributeProperties(format = "webix/xml")
@@ -162,10 +162,10 @@ public class ConfigurationManager {
         return result.toString();
     }
 
-    public String getNexusFileTemplate() throws Exception {
-        Preconditions.checkNotNull(profile);
-
-        return profile.getNexusTemplateXml().toXmlString();
+    @Attribute
+    @AttributeProperties(format = "xml")
+    public String getNexusFileXml() throws Exception {
+        return XmlHelper.toXmlString(getNexusFile());
     }
 
     public void setNexusFileTemplate(String nxFile) throws Exception {
@@ -183,20 +183,55 @@ public class ConfigurationManager {
     @AttributeProperties(format = "yml")
     private String xenvManagerConfiguration;
 
-
-    public String getCamelRoutes() throws Exception {
+    public String getNexusFileTemplate() throws Exception {
         Preconditions.checkNotNull(profile);
 
-        return profile.getCamelRoutesXml()
-                .toXmlString();
+        return XmlHelper.toXmlString(profile.getNexusTemplateXml());
     }
 
-    public void setCamelRoutes(String xml) throws Exception {
-        Preconditions.checkNotNull(profile);
+    @Attribute
+    @AttributeProperties(format = "xml")
+    public String getCamelRoutesXml() {
+        CamelRoutesXml result = new CamelRoutesXml();
 
-        profile.setCamelRoutes(XmlHelper.fromString(xml, CamelRoutesXml.class));
+        result.routes = StreamSupport.stream(camelDb.getRoutes()
+                .find()
+                .spliterator(), parallel)
+                .collect(Collectors.toList());
 
-        commit(System.getProperty("user.name", "unknown"));
+        return XmlHelper.toXmlString(result);
+    }
+
+    @Attribute
+    public String[] getCamelRoutes() {
+        return StreamSupport.stream(camelDb.getRoutes()
+                .find()
+                .spliterator(), parallel)
+                .map(camelRoute -> camelRoute.id)
+                .toArray(String[]::new);
+    }
+
+    @Command
+    public String getCamelRoute(String id) {
+        return StreamSupport.stream(camelDb.getRoutes()
+                .find(new BsonDocument("_id", new BsonString(id)))
+                .spliterator(), parallel)
+                .map(XmlHelper::toXmlString)
+                .findFirst().orElseThrow(() -> new NoSuchElementException(id));
+    }
+
+    @Command
+    public void addOrReplaceCamelRoute(String camelRouteXml) throws Exception {
+        CamelRoute update = XmlHelper.fromString(camelRouteXml, CamelRoute.class);
+
+        camelDb.getRoutes()
+                .findOneAndReplace(new BsonDocument("_id", new BsonString(update.id)), update, new FindOneAndReplaceOptions().upsert(true));
+    }
+
+    @Command
+    public void deleteCamelRoute(String id) {
+        camelDb.getRoutes()
+                .deleteOne(new BsonDocument("_id", new BsonString(id)));
     }
 
     @Attribute
@@ -218,14 +253,14 @@ public class ConfigurationManager {
 
         FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(getDataSources(profile)));
         task.run();
-        return task.get().toXmlString();
+        return XmlHelper.toXmlString(task.get());
     }
 
     private List<DataSource> getDataSources(Profile profile) {
         return profile.configuration.collections.stream()
                 .filter(collection -> collection.value == 1)
-                .map(collection -> mongo.getDataSources(collection.id))
-                .flatMap(dataSourceMongoCollection -> StreamSupport.stream(dataSourceMongoCollection.find().spliterator(), false))
+                .map(collection -> dataSourcesDb.getCollection(collection.id))
+                .flatMap(dataSourceMongoCollection -> StreamSupport.stream(dataSourceMongoCollection.find().spliterator(), parallel))
                 .collect(Collectors.toList());
     }
 
@@ -250,7 +285,7 @@ public class ConfigurationManager {
     public String getConfigurationXml() throws Exception {
         Preconditions.checkNotNull(profile);
 
-        return profile.getConfiguration().toXmlString();
+        return XmlHelper.toXmlString(profile.getConfiguration());
     }
 
     public String getPreExperimentDataCollectorLoginProperties() throws IOException {
@@ -280,14 +315,14 @@ public class ConfigurationManager {
     @Attribute
     public String getDataSourceCollections() {
         return new Gson().toJson(StreamSupport
-                .stream(mongo.getMongoDb().listCollections().spliterator(), false)
+                .stream(dataSourcesDb.getMongoDb().listCollections().spliterator(), false)
                 .map(document -> new Document("id", document.get("name")).append("value",document.get("name")))
                 .toArray());
     }
 
     @Command(inTypeDesc = "collectionId")
     public void deleteCollection(String collectionId) {
-        mongo.getMongoDb().getCollection(collectionId).drop();
+        dataSourcesDb.getMongoDb().getCollection(collectionId).drop();
     }
 
     @Command(inTypeDesc = "[collectionId, sourceId]")
@@ -297,10 +332,10 @@ public class ConfigurationManager {
         Preconditions.checkArgument(!targetId.isEmpty());
         Preconditions.checkArgument(!sourceId.isEmpty());
 
-        mongo.getMongoDb().getCollection(targetId);
-        mongo.getMongoDb().getCollection(sourceId)
+        dataSourcesDb.getMongoDb().getCollection(targetId);
+        dataSourcesDb.getMongoDb().getCollection(sourceId)
                 .find()
-                .forEach((Block<Document>) mongo.getMongoDb().getCollection(targetId)::insertOne);
+                .forEach((Block<Document>) dataSourcesDb.getMongoDb().getCollection(targetId)::insertOne);
     }
 
     @Attribute
@@ -314,7 +349,7 @@ public class ConfigurationManager {
         ;
 
         return new Gson().toJson(StreamSupport
-                .stream(mongo.getMongoDb().getCollection(collection, DataSource.class).find().spliterator(), false)
+                .stream(dataSourcesDb.getMongoDb().getCollection(collection, DataSource.class).find().spliterator(), false)
                 .toArray());
     }
 
@@ -324,9 +359,11 @@ public class ConfigurationManager {
         new AntTaskExecutor("clone-configuration", antProject).run();
     }
 
+
     @Init
     public void init() throws Exception {
-        mongo = new Mongo();
+        dataSourcesDb = new DataSourceDb();
+        camelDb = new CamelDb();
 
         if (Files.exists(CONFIGURATION_PATH)) {
             update();
@@ -342,7 +379,7 @@ public class ConfigurationManager {
 
     @Delete
     public void delete() {
-        mongo.close();
+        dataSourcesDb.close();
 
         AntProject antProject = newAntProject();
         new AntTaskExecutor("push-configuration", antProject).run();
@@ -355,7 +392,7 @@ public class ConfigurationManager {
         Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
         DataSource dataSource = new Gson().fromJson(arg,DataSource.class);
 
-        mongo.getMongoDb().getCollection(collection, DataSource.class)
+        dataSourcesDb.getMongoDb().getCollection(collection, DataSource.class)
                 .insertOne(dataSource);
     }
 
@@ -364,7 +401,7 @@ public class ConfigurationManager {
         Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
         DataSource dataSource = new Gson().fromJson(arg, DataSource.class);
 
-        mongo.getMongoDb().getCollection(collection, DataSource.class)
+        dataSourcesDb.getMongoDb().getCollection(collection, DataSource.class)
                 .replaceOne(new Document("_id", dataSource.id), dataSource);
     }
 
@@ -373,7 +410,7 @@ public class ConfigurationManager {
         Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
         DataSource dataSource = new Gson().fromJson(arg, DataSource.class);
 
-        mongo.getMongoDb().getCollection(collection, DataSource.class)
+        dataSourcesDb.getMongoDb().getCollection(collection, DataSource.class)
                 .deleteOne(new Document("_id", dataSource.id));
     }
 

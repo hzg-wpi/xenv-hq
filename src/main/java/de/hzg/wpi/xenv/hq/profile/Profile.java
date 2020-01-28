@@ -74,7 +74,7 @@ public class Profile {
     }
 
     public void setNexusFileTemplate(NexusXml nxFile) throws Exception {
-        nxFile.toXml(
+        XmlHelper.toXml(nxFile,
                 path
                         .resolve(DATA_FORMAT_SERVER)
                         .resolve(TEMPLATE_NXDL_XML));
@@ -102,7 +102,7 @@ public class Profile {
     }
 
     public void setCamelRoutes(CamelRoutesXml xml) throws Exception {
-        xml.toXml(
+        XmlHelper.toXml(xml,
                 path
                         .resolve(CAMEL_INTEGRATION)
                         .resolve(ROUTES_XML));
@@ -124,7 +124,7 @@ public class Profile {
     }
 
     public void dumpConfiguration() throws Exception {
-        configuration.toXml(Paths.get(PROFILES_ROOT).resolve(name).resolve(CONFIGURATION_XML));
+        XmlHelper.toXml(configuration, Paths.get(PROFILES_ROOT).resolve(name).resolve(CONFIGURATION_XML));
         if (parent != null) {
             parent.dumpConfiguration();
         }

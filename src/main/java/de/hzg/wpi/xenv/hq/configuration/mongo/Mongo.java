@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq.configuration;
+package de.hzg.wpi.xenv.hq.configuration.mongo;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -15,30 +15,32 @@ import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 04.09.2019
  */
-public class Mongo implements Closeable {
-    public static final String XENV_HQ_DB = "xenv-hq-datasources";
-    public final CodecRegistry pojoCodecRegistry = fromRegistries(MongoClient.getDefaultCodecRegistry(),
+public class Mongo<T> implements Closeable {
+    private static final String MONGO_HOST = System.getProperty("mongodb.host", "localhost");
+
+
+    private final CodecRegistry pojoCodecRegistry = fromRegistries(MongoClient.getDefaultCodecRegistry(),
             fromProviders(PojoCodecProvider.builder().automatic(true).build()));
-    private final String mongoHost = System.getProperty("mongodb.host", "localhost");
+
     private final MongoClient mongoClient;
     private final MongoDatabase mongoDb;
 
+    private final Class<T> clazz;
 
-    public Mongo() {
-        mongoClient = new MongoClient(mongoHost);
-        mongoDb = mongoClient.getDatabase(XENV_HQ_DB).withCodecRegistry(pojoCodecRegistry);
+
+    public Mongo(String db, Class<T> clazz) {
+        this.clazz = clazz;
+
+        mongoClient = new MongoClient(MONGO_HOST);
+        mongoDb = mongoClient.getDatabase(db).withCodecRegistry(pojoCodecRegistry);
     }
 
     public MongoDatabase getMongoDb() {
         return mongoDb;
     }
 
-    public Iterable<String> getDataSourceCollections() {
-        return mongoDb.listCollectionNames();
-    }
-
-    public MongoCollection<DataSource> getDataSources(String collection) {
-        MongoCollection<DataSource> result = mongoDb.getCollection(collection, DataSource.class);
+    public MongoCollection<T> getCollection(String collection) {
+        MongoCollection<T> result = mongoDb.getCollection(collection, clazz);
         result.withCodecRegistry(pojoCodecRegistry);
         return result;
     }
