@@ -8,15 +8,21 @@ import de.hzg.wpi.xenv.hq.configuration.camel.CamelRouteEndpoint;
 import de.hzg.wpi.xenv.hq.configuration.mongo.CamelDb;
 import de.hzg.wpi.xenv.hq.configuration.mongo.DataSourceDb;
 import de.hzg.wpi.xenv.hq.configuration.mongo.Mongo;
+import de.hzg.wpi.xenv.hq.configuration.mongo.PredatorDb;
 import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import junit.framework.TestCase;
+import org.bson.BsonDocument;
+import org.bson.BsonString;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.tango.server.device.DeviceManager;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -131,6 +137,29 @@ public class ConfigurationTest {
 
         routes.insertOne(
                 route
+        );
+
+        mongo.close();
+    }
+
+    @Test
+    @Ignore
+    public void testPredator() throws Exception {
+        Path path = Paths.get("configuration/profiles/test/PreExperimentDataCollector");//from target
+
+        String predatorMeta = "meta.yaml";
+
+
+        Mongo<BsonDocument> mongo = new PredatorDb();
+
+        MongoCollection<BsonDocument> meta = mongo.getMongoDb().getCollection("meta", BsonDocument.class);
+
+
+        String predatorYmlAsString = new String(Files.readAllBytes(path.resolve(predatorMeta)));
+
+        meta.insertOne(
+                new BsonDocument("_id", new BsonString("yml"))
+                        .append("value", new BsonString(predatorYmlAsString))
         );
 
         mongo.close();

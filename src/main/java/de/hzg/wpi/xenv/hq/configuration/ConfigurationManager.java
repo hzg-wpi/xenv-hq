@@ -16,6 +16,8 @@ import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
 import de.hzg.wpi.xenv.hq.configuration.mongo.CamelDb;
 import de.hzg.wpi.xenv.hq.configuration.mongo.DataSourceDb;
+import de.hzg.wpi.xenv.hq.configuration.mongo.PredatorDb;
+import de.hzg.wpi.xenv.hq.configuration.predator.PredatorManager;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXml;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXmlGenerator;
 import de.hzg.wpi.xenv.hq.manager.Manager;
@@ -145,6 +147,7 @@ public class ConfigurationManager {
     }
 
     private CamelDb camelDb;
+    private PredatorManager predatorManager;
 
     @Attribute
     @AttributeProperties(format = "webix/xml")
@@ -264,20 +267,19 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
     }
 
-    public String getPreExperimentDataCollectorYaml() throws Exception {
-        Preconditions.checkNotNull(profile);
-
-        Object yaml = profile.getPredatorYaml();
-        return YamlHelper.toYamlString(yaml);
+    @Attribute
+    public String[] getPreExperimentDataCollectorYamls() {
+        return predatorManager.getPreExperimentDataCollectorYamls().toArray(String[]::new);
     }
 
-    public void setPreExperimentDataCollectorYaml(String yamlString) throws Exception {
-        Preconditions.checkNotNull(profile);
+    @Command
+    public String getPreExperimentDataCollectorYaml() {
+        return predatorManager.getPreExperimentDataCollectorYaml();
+    }
 
-        Object yaml = YamlHelper.fromString(yamlString, Object.class);
-        profile.setPredatorYaml(yaml);
-
-        commit(System.getProperty("user.name", "unknown"));
+    @Command
+    public void setPreExperimentDataCollectorYaml(String yamlString) {
+        predatorManager.setPreExperimentDataCollectorYaml(yamlString);
     }
 
     @Attribute
@@ -364,6 +366,7 @@ public class ConfigurationManager {
     public void init() throws Exception {
         dataSourcesDb = new DataSourceDb();
         camelDb = new CamelDb();
+        predatorManager = new PredatorManager(new PredatorDb());
 
         if (Files.exists(CONFIGURATION_PATH)) {
             update();
