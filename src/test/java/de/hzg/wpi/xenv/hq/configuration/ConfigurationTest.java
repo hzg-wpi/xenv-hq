@@ -121,22 +121,34 @@ public class ConfigurationTest {
     @Test
     @Ignore
     public void testCamel() {
+        System.setProperty("mongodb.host", "hzgxenvtest");
+
         Mongo mongo = new CamelDb();
 
         MongoCollection<CamelRoute> routes = mongo.getMongoDb().getCollection("routes", CamelRoute.class);
 
-        CamelRoute route = new CamelRoute();
+        CamelRoute route0 = new CamelRoute();
 
-        route.id = "test-route-0";
+        route0.id = "test-route-0";
 
-        route.from = new CamelRouteEndpoint();
-        route.to = new CamelRouteEndpoint();
+        route0.from = new CamelRouteEndpoint();
+        route0.to = new CamelRouteEndpoint();
 
-        route.from.uri = "tango://hzgpp07ctcon1:10000/p07/xenv/status_server?pipe=status_server_pipe&amp;poll=true";
-        route.to.uri = "tango://hzgpp07ctcon1:10000/p07/xenv/data_format_server?pipe=pipe";
+        route0.from.uri = "tango://hzgxenvtest:10000/test/status_server/status_server?pipe=status_server_pipe&poll=true";
+        route0.to.uri = "tango://hzgxenvtest:10000/test/dfs/0?pipe=pipe";
 
-        routes.insertOne(
-                route
+        CamelRoute route1 = new CamelRoute();
+
+        route1.id = "test-route-1";
+
+        route1.from = new CamelRouteEndpoint();
+        route1.to = new CamelRouteEndpoint();
+
+        route1.from.uri = "tango://hzgxenvtest:10000/test/predator/0?pipe=pipe&once=true";
+        route1.to.uri = "tango://hzgxenvtest:10000/test/dfs/0?pipe=pipe";
+
+        routes.insertMany(
+                Lists.newArrayList(route0, route1)
         );
 
         mongo.close();
@@ -145,6 +157,8 @@ public class ConfigurationTest {
     @Test
     @Ignore
     public void testPredator() throws Exception {
+        System.setProperty("mongodb.host", "hzgxenvtest");
+
         Path path = Paths.get("configuration/profiles/test/PreExperimentDataCollector");//from target
 
         String predatorMeta = "meta.yaml";

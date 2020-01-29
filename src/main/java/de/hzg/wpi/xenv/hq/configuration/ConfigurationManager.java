@@ -1,38 +1,30 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.mongodb.Block;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
-import de.hzg.wpi.xenv.hq.HeadQuarter;
-import de.hzg.wpi.xenv.hq.ant.AntProject;
-import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
+import com.mongodb.client.model.UpdateOptions;
 import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoute;
 import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoutesXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
 import de.hzg.wpi.xenv.hq.configuration.mongo.CamelDb;
+import de.hzg.wpi.xenv.hq.configuration.mongo.CollectionsDb;
 import de.hzg.wpi.xenv.hq.configuration.mongo.DataSourceDb;
 import de.hzg.wpi.xenv.hq.configuration.mongo.PredatorDb;
 import de.hzg.wpi.xenv.hq.configuration.predator.PredatorManager;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXml;
 import de.hzg.wpi.xenv.hq.configuration.status_server.StatusServerXmlGenerator;
-import de.hzg.wpi.xenv.hq.manager.Manager;
-import de.hzg.wpi.xenv.hq.profile.Profile;
-import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
-import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
 import fr.esrf.Tango.DevVarLongStringArray;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.Document;
-import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.tango.DeviceState;
 import org.tango.server.ServerManager;
 import org.tango.server.annotation.*;
@@ -46,9 +38,6 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -69,14 +58,11 @@ import java.util.stream.StreamSupport;
 public class ConfigurationManager {
     public static final List<String> VALID_DATA_SOURCE_TYPES = Arrays.asList("scalar", "spectrum", "log");
     public static final String CONFIGURATION_XML = "configuration.xml";
+    public static final String TEMPLATE_NXDL_XML = "template.nxdl.xml";
     public static final String DATASOURCE_SRC_EXTERNAL = "external:";
     private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
-    private final ProfileManager profileManager = new ProfileManager();
 
-    private final JsonWriterSettings settings = JsonWriterSettings.builder()
-            .int64Converter((value, writer) -> writer.writeNumber(value.toString()))
-            .build();
-    private final boolean parallel = false;
+    private final boolean nonParallelStream = false;
     private DataSourceDb dataSourcesDb;
     private MongoCollection<Document> dataSources;
     private String collection;
@@ -91,30 +77,12 @@ public class ConfigurationManager {
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    Profile profile;
     @Attribute
     @AttributeProperties(format = "xml")
     public String nexusFileTemplate;
 
-    public static final Path CONFIGURATION_PATH = Paths.get("configuration");
-
-    @Attribute
-    public String[] getProfiles() throws IOException {
-        Preconditions.checkState(Files.exists(Paths.get("configuration")));
-
-        return Files.list(Paths.get(HeadQuarter.PROFILES_ROOT)).map(
-                path -> path.getFileName().toString()
-        ).toArray(String[]::new);
-    }
-
     public void setDeviceManager(DeviceManager deviceManager) {
         this.deviceManager = deviceManager;
-    }
-
-    @Attribute
-    @AttributeProperties(format = "json")
-    public String getProfile() {
-        return new Gson().toJson(profile);
     }
 
     public DeviceState getState() {
@@ -133,18 +101,20 @@ public class ConfigurationManager {
         this.status = String.format("%d: %s", System.currentTimeMillis(), status);
     }
 
+    private CollectionsDb collectionsDb;
+
+    private CamelDb camelDb;
+    private PredatorManager predatorManager;
+
     private NexusXml getNexusFile() throws Exception {
-        Preconditions.checkNotNull(profile);
-        NexusXml nexusXml = profile.getNexusTemplateXml();
+        NexusXml nexusXml = XmlHelper.fromXml(
+                Paths.get("config").resolve(TEMPLATE_NXDL_XML), NexusXml.class);
         FutureTask<NexusXml> task = new FutureTask<>(
-                new NexusXmlGenerator(getDataSources(profile), nexusXml));
+                new NexusXmlGenerator(getSelectedDataSources(), nexusXml));
         task.run();
 
         return task.get();
     }
-
-    private CamelDb camelDb;
-    private PredatorManager predatorManager;
 
     @Attribute
     @AttributeProperties(format = "webix/xml")
@@ -168,27 +138,6 @@ public class ConfigurationManager {
         return XmlHelper.toXmlString(getNexusFile());
     }
 
-    public void setNexusFileTemplate(String nxFile) throws Exception {
-        Preconditions.checkNotNull(profile);
-
-        profile.setNexusFileTemplate(
-                XmlHelper.fromString(nxFile, NexusXml.class));
-
-        commit(System.getProperty("user.name", "unknown"));
-    }
-
-
-
-    @Attribute
-    @AttributeProperties(format = "yml")
-    private String xenvManagerConfiguration;
-
-    public String getNexusFileTemplate() throws Exception {
-        Preconditions.checkNotNull(profile);
-
-        return XmlHelper.toXmlString(profile.getNexusTemplateXml());
-    }
-
     @Attribute
     @AttributeProperties(format = "xml")
     public String getCamelRoutesXml() {
@@ -196,7 +145,7 @@ public class ConfigurationManager {
 
         result.routes = StreamSupport.stream(camelDb.getRoutes()
                 .find()
-                .spliterator(), parallel)
+                .spliterator(), nonParallelStream)
                 .collect(Collectors.toList());
 
         return XmlHelper.toXmlString(result);
@@ -206,7 +155,7 @@ public class ConfigurationManager {
     public String[] getCamelRoutes() {
         return StreamSupport.stream(camelDb.getRoutes()
                 .find()
-                .spliterator(), parallel)
+                .spliterator(), nonParallelStream)
                 .map(camelRoute -> camelRoute.id)
                 .toArray(String[]::new);
     }
@@ -215,7 +164,7 @@ public class ConfigurationManager {
     public String getCamelRoute(String id) {
         return StreamSupport.stream(camelDb.getRoutes()
                 .find(new BsonDocument("_id", new BsonString(id)))
-                .spliterator(), parallel)
+                .spliterator(), nonParallelStream)
                 .map(XmlHelper::toXmlString)
                 .findFirst().orElseThrow(() -> new NoSuchElementException(id));
     }
@@ -236,11 +185,9 @@ public class ConfigurationManager {
 
     @Attribute
     public String getNexusMapping() throws ExecutionException, InterruptedException, IOException {
-        Preconditions.checkNotNull(profile);
-
         StringWriter out = new StringWriter();
 
-        FutureTask<Properties> task = new FutureTask<>(new MappingGenerator(getDataSources(profile)));
+        FutureTask<Properties> task = new FutureTask<>(new MappingGenerator(getSelectedDataSources()));
         task.run();
         task.get().store(out, null);
 
@@ -249,18 +196,16 @@ public class ConfigurationManager {
 
     @Attribute
     public String getStatusServerXml() throws Exception {
-        Preconditions.checkNotNull(profile);
-
-        FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(getDataSources(profile)));
+        FutureTask<StatusServerXml> task = new FutureTask<>(new StatusServerXmlGenerator(getSelectedDataSources()));
         task.run();
         return XmlHelper.toXmlString(task.get());
     }
 
-    private List<DataSource> getDataSources(Profile profile) {
-        return profile.configuration.collections.stream()
+    private List<DataSource> getSelectedDataSources() {
+        return StreamSupport.stream(collectionsDb.getCollections().find().spliterator(), nonParallelStream)
                 .filter(collection -> collection.value == 1)
                 .map(collection -> dataSourcesDb.getCollection(collection.id))
-                .flatMap(dataSourceMongoCollection -> StreamSupport.stream(dataSourceMongoCollection.find().spliterator(), parallel))
+                .flatMap(dataSourceMongoCollection -> StreamSupport.stream(dataSourceMongoCollection.find().spliterator(), nonParallelStream))
                 .collect(Collectors.toList());
     }
 
@@ -278,30 +223,8 @@ public class ConfigurationManager {
     }
 
     @Attribute
-    @AttributeProperties(format = "xml")
-    public String getConfigurationXml() throws Exception {
-        Preconditions.checkNotNull(profile);
-
-        return XmlHelper.toXmlString(profile.getConfiguration());
-    }
-
-    @Attribute
     public String[] getPreExperimentDataCollectorLoginProperties() {
         return predatorManager.getPreExperimentDataCollectorLoginProperties().toArray(String[]::new);
-    }
-
-    public String getXenvManagerConfiguration() throws IOException {
-        Preconditions.checkNotNull(profile);
-
-        return YamlHelper.toYamlString(profile.manager);
-    }
-
-    public void setXenvManagerConfiguration(String yaml) throws Exception {
-        Preconditions.checkNotNull(profile);
-
-        profile.setManager(YamlHelper.fromString(yaml, Manager.class));
-
-        commit(System.getProperty("user.name", "unknown"));
     }
 
     public static void main(String[] args) {
@@ -345,30 +268,16 @@ public class ConfigurationManager {
         ;
 
         return new Gson().toJson(StreamSupport
-                .stream(dataSourcesDb.getMongoDb().getCollection(collection, DataSource.class).find().spliterator(), false)
+                .stream(dataSourcesDb.getMongoDb().getCollection(collection, DataSource.class).find().spliterator(), nonParallelStream)
                 .toArray());
     }
 
-    @Command(name = "clone")
-    public void cloneConfiguration() {
-        AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
-        new AntTaskExecutor("clone-configuration", antProject).run();
-    }
-
-
     @Init
-    public void init() throws Exception {
+    public void init() {
         dataSourcesDb = new DataSourceDb();
         camelDb = new CamelDb();
+        collectionsDb = new CollectionsDb();
         predatorManager = new PredatorManager(new PredatorDb());
-
-        if (Files.exists(CONFIGURATION_PATH)) {
-            update();
-        } else {
-            cloneConfiguration();
-        }
-
-        profile = null;
 
         deviceManager.pushStateChangeEvent(DeviceState.STANDBY);
         deviceManager.pushStatusChangeEvent("ConfigurationManager has been initialized.");
@@ -377,9 +286,10 @@ public class ConfigurationManager {
     @Delete
     public void delete() {
         dataSourcesDb.close();
+        camelDb.close();
+        predatorManager.close();
+        collectionsDb.close();
 
-        AntProject antProject = newAntProject();
-        new AntTaskExecutor("push-configuration", antProject).run();
         deviceManager.pushStateChangeEvent(DeviceState.OFF);
         deviceManager.pushStatusChangeEvent(DeviceState.OFF.name());
     }
@@ -412,134 +322,14 @@ public class ConfigurationManager {
     }
 
     @Command
-    public void update() {
-        executorService.submit(new PullAndUpdateConfigurationTask());
-    }
-
-    @Command
-    public void loadProfile(String name) throws Exception {
-        Preconditions.checkNotNull(name);
-        this.profile = profileManager.loadProfile(name);
-
-        deviceManager.pushStateChangeEvent(DeviceState.ON);
-        deviceManager.pushStatusChangeEvent("Profile set to " + name);
-    }
-
-    @Command(inTypeDesc =
-            "id\n" +
-                    "nxPath\n" +
-                    "type[scalar|spectrum|log]\n" +
-                    "url\n" +
-                    "pollRate\n" +
-                    "dataType\n")
-    public void createDataSource(String[] params) throws Exception {
-        URI nxPath = URI.create(params[1]);
-        Preconditions.checkArgument(VALID_DATA_SOURCE_TYPES.contains(params[2]));
-        String src = DATASOURCE_SRC_EXTERNAL.equalsIgnoreCase(params[3]) ? params[3] : URI.create(params[3]).toString();
-
-
-        DataSource result = new DataSource(
-                Long.parseLong(params[0]),
-                nxPath.toString(),
-                params[2],
-                src,
-                Integer.parseInt(params[4]),
-                params[5]
-        );
-
-        profile.addDataSource(result);
-
-        profile.dumpConfiguration();
-    }
-
-    @Command(inTypeDesc = "id")
-    public void removeDataSource(long id) throws Exception {
-        DataSource result = new DataSource();
-        result.id = id;
-
-        profile.removeDataSource(result);
-
-        profile.dumpConfiguration();
-    }
-
-    @Command(inTypeDesc = "username")
-    public void commit(String username) {
-        //TODO #10
-        AntProject antProject = newAntProject();
-        antProject.getProject().setUserProperty("user.name", username);
-        new AntTaskExecutor("commit-configuration", antProject).run();
-    }
-
-    @Command(inTypeDesc = "username")
-    public void push() {
-        executorService.submit(
-                new PullAndUpdateConfigurationTask());
-        executorService.submit(
-                new PushConfigurationTask());
-    }
-
-    @Command(inTypeDesc = "profile|host|instance")
-    public void createProfile(String[] profileData) throws Exception {
-        Preconditions.checkArgument(profileData.length == 3);
-        profileManager.createProfile(profileData[0], profileData[1], profileData[2], this.profile);
-    }
-
-    @Command(inTypeDesc = "profile")
-    public void deleteProfile(String profile) {
-        new ProfileManager().deleteProfile(profile);
-
-        if (this.profile != null && profile.equalsIgnoreCase(this.profile.name)) {
-            this.profile = null;
-            setStatus("Profile has been set to null");
-            setState(DeviceState.STANDBY);
-        }
-    }
-
-    private AntProject newAntProject() {
-        AntProject antProject = new AntProject(HeadQuarter.getAntRoot() + "/build.xml");
-        antProject.getProject().setBasedir(CONFIGURATION_PATH.toAbsolutePath().toString());
-        return antProject;
-    }
-
-    @Command
-    public void updateProfileCollections(DevVarLongStringArray collections) throws Exception {
-        Preconditions.checkState(profile != null);
-        ;
+    public void updateProfileCollections(DevVarLongStringArray collections) {
         Preconditions.checkArgument(collections.lvalue.length == collections.svalue.length);
-        List<Collection> result = Lists.newArrayListWithCapacity(collections.lvalue.length);
+
         for (int i = 0, size = collections.lvalue.length; i < size; ++i) {
-            result.add(new Collection(collections.svalue[i], collections.lvalue[i]));
-        }
-
-        profile.configuration.collections = result;
-
-        profile.dumpConfiguration();
-    }
-
-    private class PullAndUpdateConfigurationTask implements Runnable {
-        public void run() {
-            MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
-            try {
-                AntProject antProject = newAntProject();
-                new AntTaskExecutor("pull-configuration", antProject).run();
-                new AntTaskExecutor("update-configuration", antProject).run();
-            } catch (Exception e) {
-                logger.error("Failed to pull configuration");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
-        }
-    }
-
-    private class PushConfigurationTask implements Runnable {
-        public void run() {
-            MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
-            try {
-                AntProject antProject = newAntProject();
-                new AntTaskExecutor("push-configuration", antProject).run();
-            } catch (Exception e) {
-                logger.error("Failed to push configuration");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
+            collectionsDb.getCollections()
+                    .replaceOne(
+                            new BsonDocument("_id", new BsonString(collections.svalue[i])),
+                            new Collection(collections.svalue[i], collections.lvalue[i]), new UpdateOptions().upsert(true));
         }
     }
 }

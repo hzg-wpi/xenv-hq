@@ -130,16 +130,6 @@ public class HeadQuarter {
             }
         });
 
-        configurationManagers.forEach(configurationManager -> {
-            try {
-                configurationManager.loadProfile(profile);
-            } catch (Exception e) {
-                logger.error("ConfigManager failed to load configuration", e);
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-                configurationManager.setState(DeviceState.FAULT);
-                configurationManager.setStatus("ConfigManager failed to load configuration");
-            }
-        });
         if(getState() != DeviceState.ALARM) {
             deviceManager.pushStateChangeEvent(DeviceState.ON);
             deviceManager.pushStatusChangeEvent("Profile set to " + profile);

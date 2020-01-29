@@ -1,0 +1,21 @@
+<?xml version='1.0'?>
+<definition>
+    <group type="NXentry" name="entry">
+        <group type="NXcollection" name="hardware">
+            <group type="NXcollection" name="beam_current" src="tine:/PETRA/Idc/Buffer-0/I.SCH">
+                <group type="NXlog" name="current">
+                    <field type="float64" name="value">
+                        <dimensions rank="1">
+                            <dim index="0" value="0"/>
+                        </dimensions>
+                    </field>
+                    <field type="uint64" name="time">
+                        <dimensions rank="1">
+                            <dim index="0" value="0"/>
+                        </dimensions>
+                    </field>
+                </group>
+            </group>
+        </group>
+    </group>
+</definition>

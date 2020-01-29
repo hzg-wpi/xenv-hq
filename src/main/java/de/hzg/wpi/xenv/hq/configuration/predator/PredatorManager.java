@@ -5,6 +5,7 @@ import de.hzg.wpi.xenv.hq.configuration.mongo.PredatorDb;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 
+import java.io.Closeable;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
@@ -14,7 +15,7 @@ import java.util.stream.StreamSupport;
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 29.01.2020
  */
-public class PredatorManager {
+public class PredatorManager implements Closeable {
     private final PredatorDb predatorDb;
     private final boolean nonParallelStream = false;
 
@@ -55,5 +56,9 @@ public class PredatorManager {
                 .findOneAndReplace(new BsonDocument("_id", new BsonString(property.getKey())),
                         new BsonDocument("_id", new BsonString(property.getKey()))
                                 .append("value", new BsonString(property.getValue())), new FindOneAndReplaceOptions().upsert(true));
+    }
+
+    public void close() {
+        predatorDb.close();
     }
 }
