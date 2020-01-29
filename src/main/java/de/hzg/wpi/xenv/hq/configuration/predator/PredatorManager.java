@@ -1,9 +1,11 @@
 package de.hzg.wpi.xenv.hq.configuration.predator;
 
+import com.mongodb.client.model.FindOneAndReplaceOptions;
 import de.hzg.wpi.xenv.hq.configuration.mongo.PredatorDb;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -37,8 +39,21 @@ public class PredatorManager {
     }
 
     public void setPreExperimentDataCollectorYaml(String yamlString) {
-        predatorDb.getCollection("meta.yml")
+        predatorDb.getCollection("meta")
                 .replaceOne(new BsonDocument("_id", new BsonString("yml")), new BsonDocument("value", new BsonString(yamlString)));
     }
 
+    public Stream<String> getPreExperimentDataCollectorLoginProperties() {
+        return StreamSupport.stream(
+                predatorDb.getCollection("login")
+                        .find().spliterator(), nonParallelStream
+        ).map(bsonDocument -> new StringBuilder(bsonDocument.getString("_id").getValue()).append('=').append(bsonDocument.getString("value").getValue()).toString());
+    }
+
+    public void setPreExperimentDataCollectorLoginProperties(Map.Entry<String, String> property) {
+        predatorDb.getCollection("login")
+                .findOneAndReplace(new BsonDocument("_id", new BsonString(property.getKey())),
+                        new BsonDocument("_id", new BsonString(property.getKey()))
+                                .append("value", new BsonString(property.getValue())), new FindOneAndReplaceOptions().upsert(true));
+    }
 }

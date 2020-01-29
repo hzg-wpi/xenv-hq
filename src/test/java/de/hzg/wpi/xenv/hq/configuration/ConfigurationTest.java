@@ -162,6 +162,15 @@ public class ConfigurationTest {
                         .append("value", new BsonString(predatorYmlAsString))
         );
 
+
+        MongoCollection<BsonDocument> login = mongo.getMongoDb().getCollection("login", BsonDocument.class);
+
+
+        login.insertOne(
+                new BsonDocument("_id", new BsonString("predator.tomcat.use.kerberos"))
+                        .append("value", new BsonString("true"))
+        );
+
         mongo.close();
     }
 

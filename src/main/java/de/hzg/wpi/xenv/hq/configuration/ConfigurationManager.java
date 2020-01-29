@@ -96,9 +96,6 @@ public class ConfigurationManager {
     @AttributeProperties(format = "xml")
     public String nexusFileTemplate;
 
-    @Attribute
-    @AttributeProperties(format = "yaml")
-    public String preExperimentDataCollectorYaml;
     public static final Path CONFIGURATION_PATH = Paths.get("configuration");
 
     @Attribute
@@ -267,17 +264,15 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
     }
 
-    @Attribute
-    public String[] getPreExperimentDataCollectorYamls() {
-        return predatorManager.getPreExperimentDataCollectorYamls().toArray(String[]::new);
-    }
 
-    @Command
+    @Attribute
+    @AttributeProperties(format = "yml")
     public String getPreExperimentDataCollectorYaml() {
         return predatorManager.getPreExperimentDataCollectorYaml();
     }
 
-    @Command
+    @Attribute
+    @AttributeProperties(format = "yml")
     public void setPreExperimentDataCollectorYaml(String yamlString) {
         predatorManager.setPreExperimentDataCollectorYaml(yamlString);
     }
@@ -290,10 +285,9 @@ public class ConfigurationManager {
         return XmlHelper.toXmlString(profile.getConfiguration());
     }
 
-    public String getPreExperimentDataCollectorLoginProperties() throws IOException {
-        Preconditions.checkNotNull(profile);
-
-        return profile.getPredatorLoginProperties();
+    @Attribute
+    public String[] getPreExperimentDataCollectorLoginProperties() {
+        return predatorManager.getPreExperimentDataCollectorLoginProperties().toArray(String[]::new);
     }
 
     public String getXenvManagerConfiguration() throws IOException {

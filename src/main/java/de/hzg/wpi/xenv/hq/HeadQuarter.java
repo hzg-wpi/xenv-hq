@@ -272,7 +272,8 @@ public class HeadQuarter {
 
                 Files.newOutputStream(
                         conf.resolve("login.properties"))
-                        .write(configurationManager.getPreExperimentDataCollectorLoginProperties().getBytes());
+                        .write(
+                                String.join("\n", configurationManager.getPreExperimentDataCollectorLoginProperties()).getBytes());
             } catch (Exception e) {
                 logger.error("Failed to write PreExperimentDataCollector configuration");
                 deviceManager.pushStateChangeEvent(DeviceState.ALARM);
