@@ -1,6 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
-import de.hzg.wpi.xenv.hq.configuration.DataSource;
+import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.JXPathNotFoundException;
 

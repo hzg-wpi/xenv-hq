@@ -1,6 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping;
 
-import de.hzg.wpi.xenv.hq.configuration.DataSource;
+import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
 
 import java.util.HashMap;
 import java.util.Map;

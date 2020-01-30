@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq.configuration;
+package de.hzg.wpi.xenv.hq.configuration.collections;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;

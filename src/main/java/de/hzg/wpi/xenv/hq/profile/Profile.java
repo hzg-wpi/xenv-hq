@@ -1,8 +1,8 @@
 package de.hzg.wpi.xenv.hq.profile;
 
 import de.hzg.wpi.xenv.hq.configuration.Configuration;
-import de.hzg.wpi.xenv.hq.configuration.DataSource;
 import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoutesXml;
+import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXml;
 import de.hzg.wpi.xenv.hq.manager.Manager;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;

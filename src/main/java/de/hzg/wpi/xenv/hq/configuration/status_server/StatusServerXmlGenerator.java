@@ -1,7 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration.status_server;
 
 import com.google.common.collect.Iterables;
-import de.hzg.wpi.xenv.hq.configuration.DataSource;
+import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.JXPathNotFoundException;
 import org.slf4j.Logger;

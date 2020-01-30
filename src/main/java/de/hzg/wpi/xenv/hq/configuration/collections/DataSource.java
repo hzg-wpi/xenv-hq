@@ -1,4 +1,4 @@
-package de.hzg.wpi.xenv.hq.configuration;
+package de.hzg.wpi.xenv.hq.configuration.collections;
 
 import org.bson.codecs.pojo.annotations.BsonId;
 import org.bson.codecs.pojo.annotations.BsonProperty;
@@ -15,6 +15,8 @@ import java.util.Objects;
  */
 @Root
 public class DataSource {
+    public static final String DATASOURCE_SRC_EXTERNAL = "external:";
+
     @BsonId
     @BsonProperty("_id")
     @Attribute

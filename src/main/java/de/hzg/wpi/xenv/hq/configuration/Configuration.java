@@ -1,5 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration;
 
+import de.hzg.wpi.xenv.hq.configuration.collections.Collection;
+import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;

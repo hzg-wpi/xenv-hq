@@ -1,7 +1,7 @@
 package de.hzg.wpi.xenv.hq.configuration.mongo;
 
 import com.mongodb.client.MongoCollection;
-import de.hzg.wpi.xenv.hq.configuration.Collection;
+import de.hzg.wpi.xenv.hq.configuration.collections.Collection;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>

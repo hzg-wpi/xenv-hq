@@ -5,11 +5,11 @@ import com.google.gson.Gson;
 import com.mongodb.client.MongoCollection;
 import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoute;
 import de.hzg.wpi.xenv.hq.configuration.camel.CamelRouteEndpoint;
+import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
 import de.hzg.wpi.xenv.hq.configuration.mongo.CamelDb;
 import de.hzg.wpi.xenv.hq.configuration.mongo.DataSourceDb;
 import de.hzg.wpi.xenv.hq.configuration.mongo.Mongo;
 import de.hzg.wpi.xenv.hq.configuration.mongo.PredatorDb;
-import de.hzg.wpi.xenv.hq.profile.Profile;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import junit.framework.TestCase;
 import org.bson.BsonDocument;
@@ -23,9 +23,10 @@ import org.tango.server.device.DeviceManager;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.junit.Assert.assertEquals;
@@ -223,7 +224,7 @@ public class ConfigurationTest {
     @Test
     @Ignore
     public void migrateToMondo() throws Exception {
-        System.setProperty("mongodb.host", "hzgpp05xenv");
+        System.setProperty("mongodb.host", "localhost");
 
         Gson gson = new Gson();
 
@@ -231,27 +232,24 @@ public class ConfigurationTest {
             ConfigurationManager manager = new ConfigurationManager();
             manager.setDeviceManager(mock(DeviceManager.class));
 
-            Arrays.stream(manager.getProfiles())
-                    .filter(s -> !s.equalsIgnoreCase("default"))
+            Stream.of("test")
+//                    .filter(s -> !s.equalsIgnoreCase("default"))
                     .map(s -> {
                         try {
-                            manager.loadProfile(s);
-                            return gson.fromJson(gson.toJson(manager.profile), Profile.class);
+                            return XmlHelper.fromXml(Paths.get("configuration/profiles").resolve(s).resolve("configuration.xml"), Configuration.class);
                         } catch (Exception e) {
                             System.err.println(e.getMessage());
                             return null;
                         }
                     })
-                    .filter(profile -> profile != null)
+                    .filter(Objects::nonNull)
                     .forEach(profile -> {
-                        mongo.getMongoDb().getCollection(profile.name, DataSource.class).insertMany(profile.getDataSources().stream().map(dataSource -> {
-                            dataSource.id = System.nanoTime();
-                            return dataSource;
-                        }).collect(Collectors.toList()));
+                        mongo.getMongoDb().getCollection("test", DataSource.class)
+                                .insertMany(profile.dataSourceList.stream().peek(dataSource -> dataSource.id = System.nanoTime()).collect(Collectors.toList()));
                     });
         }
     }
-
+//
 //    @Test
 //    public void testReactiveMongo() throws Exception {
 //        CodecRegistry pojoCodecRegistry = fromRegistries(MongoClients.getDefaultCodecRegistry(),

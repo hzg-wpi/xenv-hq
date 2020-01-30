@@ -183,12 +183,13 @@ public class HeadQuarter {
         });
     }
 
+    //TODO move to waltz XenvHQ server side
     @Command
     public void updateAll() {
-        updateStatusServerConfiguration();
-        updateDataFormatServerConfiguration();
-        updateCamelIntegrationConfiguration();
-        updatePreExperimentDataCollectorConfiguration();
+        configurationManagers.forEach(ConfigurationManager::writeStatusServerConfiguration);
+        configurationManagers.forEach(ConfigurationManager::writeDataFormatServerConfiguration);
+        configurationManagers.forEach(ConfigurationManager::writeCamelConfiguration);
+        configurationManagers.forEach(ConfigurationManager::writePreExperimentDataCollectorConfiguration);
     }
 
 
@@ -197,79 +198,6 @@ public class HeadQuarter {
         stopAll();
         updateAll();
         startAll();
-    }
-
-    @Command
-    public void updateStatusServerConfiguration() {
-        configurationManagers.forEach(configurationManager -> {
-            try {
-                Path conf = Files.createDirectories(Paths.get("etc/StatusServer"));
-                Files.newOutputStream(
-                        conf.resolve("status_server.xml"))
-                        .write(configurationManager.getStatusServerXml().getBytes());
-            } catch (Exception e) {
-                logger.error("Failed to write StatusServer configuration");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
-
-        });
-    }
-
-    @Command
-    public void updateDataFormatServerConfiguration() {
-        configurationManagers.forEach(configurationManager -> {
-            try {
-                Path conf = Files.createDirectories(Paths.get("etc/DataFormatServer"));
-                Files.newOutputStream(
-                        conf.resolve("default.nxdl.xml"))
-                        .write(configurationManager.getNexusFileXml().getBytes());
-
-                Files.newOutputStream(
-                        conf.resolve("nxpath.mapping"))
-                        .write(configurationManager.getNexusMapping().getBytes());
-            } catch (Exception e) {
-                logger.error("Failed to write DataFormatServer configuration");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
-
-        });
-    }
-
-    @Command
-    public void updateCamelIntegrationConfiguration() {
-        configurationManagers.forEach(configurationManager -> {
-            try {
-                Path conf = Files.createDirectories(Paths.get("etc/CamelIntegration"));
-                Files.newOutputStream(
-                        conf.resolve("routes.xml"))
-                        .write(configurationManager.getCamelRoutesXml().getBytes());
-            } catch (Exception e) {
-                logger.error("Failed to write DataFormatServer configuration");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
-
-        });
-    }
-
-    @Command
-    public void updatePreExperimentDataCollectorConfiguration() {
-        configurationManagers.forEach(configurationManager -> {
-            try {
-                Path conf = Files.createDirectories(Paths.get("etc/PreExperimentDataCollector"));
-                Files.newOutputStream(
-                        conf.resolve("meta.yaml"))
-                        .write(configurationManager.getPreExperimentDataCollectorYaml().getBytes());
-
-                Files.newOutputStream(
-                        conf.resolve("login.properties"))
-                        .write(
-                                String.join("\n", configurationManager.getPreExperimentDataCollectorLoginProperties()).getBytes());
-            } catch (Exception e) {
-                logger.error("Failed to write PreExperimentDataCollector configuration");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
-
-        });
     }
 
     @Command
@@ -285,7 +213,7 @@ public class HeadQuarter {
             }
         });
 
-        updateStatusServerConfiguration();
+        configurationManagers.forEach(ConfigurationManager::writeStatusServerConfiguration);
 
         xenvManagers.forEach(xenvManager -> xenvManager.startServer("status_server"));
         logger.trace("Done.");
@@ -304,12 +232,13 @@ public class HeadQuarter {
             }
         });
 
-        updateDataFormatServerConfiguration();
+        configurationManagers.forEach(ConfigurationManager::writeDataFormatServerConfiguration);
 
         xenvManagers.forEach(xenvManager -> xenvManager.startServer("data_format_server"));
         logger.trace("Done.");
     }
 
+    //TODO move to waltz XenvHQ server side
     @Command
     public void restartCamelIntegration() {
         xenvManagers.forEach(xenvManager -> {
@@ -323,7 +252,8 @@ public class HeadQuarter {
             }
         });
 
-        updateCamelIntegrationConfiguration();
+
+        configurationManagers.forEach(ConfigurationManager::writeCamelConfiguration);
 
         xenvManagers.forEach(xenvManager -> xenvManager.startServer("camel_integration"));
         logger.trace("Done.");
@@ -343,7 +273,7 @@ public class HeadQuarter {
             }
         });
 
-        updatePreExperimentDataCollectorConfiguration();
+        configurationManagers.forEach(ConfigurationManager::writePreExperimentDataCollectorConfiguration);
 
         xenvManagers.forEach(xenvManager -> xenvManager.startServer("predator"));
         logger.trace("Done.");

@@ -2,7 +2,7 @@ package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
 import com.google.common.collect.Lists;
 import de.hzg.wpi.xenv.hq.configuration.Configuration;
-import de.hzg.wpi.xenv.hq.configuration.DataSource;
+import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
 import de.hzg.wpi.xenv.hq.util.xml.XmlHelper;
 import org.apache.commons.jxpath.JXPathContext;
 import org.junit.Before;

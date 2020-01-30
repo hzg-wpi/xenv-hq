@@ -1,6 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.mongo;
 
-import de.hzg.wpi.xenv.hq.configuration.DataSource;
+import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>

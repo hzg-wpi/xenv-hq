@@ -1,6 +1,6 @@
 package de.hzg.wpi.xenv.hq.configuration.status_server;
 
-import de.hzg.wpi.xenv.hq.configuration.DataSource;
+import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
 
 import java.net.URI;
 import java.util.concurrent.Callable;
