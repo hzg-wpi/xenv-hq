@@ -7,8 +7,11 @@ import de.hzg.wpi.xenv.hq.util.FilesHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
 import fr.esrf.Tango.DevFailed;
 import fr.esrf.TangoApi.DeviceProxyFactory;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ClassUtils;
+import org.apache.tools.ant.BuildEvent;
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.BuildListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -17,6 +20,7 @@ import org.tango.client.ez.proxy.NoSuchCommandException;
 import org.tango.client.ez.proxy.TangoProxies;
 import org.tango.client.ez.proxy.TangoProxy;
 import org.tango.client.ez.proxy.TangoProxyException;
+import org.tango.server.ServerManager;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
 
@@ -24,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutorService;
 
 import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
@@ -87,12 +92,74 @@ public class XenvManager {
         deviceManager.pushStatusChangeEvent(DeviceState.OFF.name());
     }
 
+    public static void main(String[] args) throws Exception {
+        createTempDirectory();
+        extractResources();
+        ServerManager.getInstance().start(args, XenvManager.class);
+    }
+
+    public static void createTempDirectory() throws IOException {
+        Path tmpDir = Files.createTempDirectory("hq_").toAbsolutePath();
+        String result = tmpDir.toString();
+        System.setProperty(XENV_HQ_TMP_DIR, result);
+        FileUtils.forceDeleteOnExit(tmpDir.toFile());
+    }
+
+    public static void extractResources() throws IOException {
+        Files.copy(
+                XenvManager.class.getClassLoader().getResourceAsStream("ant/Executable_template"),
+                Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("Executable_template"),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        Files.copy(
+                XenvManager.class.getClassLoader().getResourceAsStream("ant/build.xml"),
+                Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("build.xml"),
+                StandardCopyOption.REPLACE_EXISTING);
+    }
+
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
     public void startServer(String executable) {
         Runnable runnable = () -> {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
 
             AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
+
+            antProject.getProject().addBuildListener(new BuildListener() {
+                @Override
+                public void buildStarted(BuildEvent event) {
+                    logger.info(event.getMessage());
+                }
+
+                @Override
+                public void buildFinished(BuildEvent event) {
+                    logger.info(event.getMessage());
+                }
+
+                @Override
+                public void targetStarted(BuildEvent event) {
+                    logger.info(event.getMessage());
+                }
+
+                @Override
+                public void targetFinished(BuildEvent event) {
+                    logger.info(event.getMessage());
+                }
+
+                @Override
+                public void taskStarted(BuildEvent event) {
+                    logger.info(event.getMessage());
+                }
+
+                @Override
+                public void taskFinished(BuildEvent event) {
+                    logger.info(event.getMessage());
+                }
+
+                @Override
+                public void messageLogged(BuildEvent event) {
+                    logger.info(event.getMessage());
+                }
+            });
 
             populateAntProjectWithProperties(configuration, executable, antProject);
 

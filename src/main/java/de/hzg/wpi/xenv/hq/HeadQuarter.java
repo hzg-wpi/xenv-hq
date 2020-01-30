@@ -19,9 +19,7 @@ import org.tango.utils.DevFailedUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -51,8 +49,8 @@ public class HeadQuarter {
     private List<ConfigurationManager> configurationManagers;
 
     public static void main(String[] args) throws IOException {
-        createTempDirectory();
-        extractResources();
+        XenvManager.createTempDirectory();
+        XenvManager.extractResources();
         setSystemProperties();
 
         ServerManager.getInstance().addClass("ConfigurationManager", ConfigurationManager.class);
@@ -62,24 +60,7 @@ public class HeadQuarter {
         ServerManager.getInstance().start(args, HeadQuarter.class.getSimpleName());
     }
 
-    private static void createTempDirectory() throws IOException {
-        Path tmpDir = Files.createTempDirectory("hq_").toAbsolutePath();
-        String result = tmpDir.toString();
-        System.setProperty(XENV_HQ_TMP_DIR, result);
-        FileUtils.forceDeleteOnExit(tmpDir.toFile());
-    }
 
-    private static void extractResources() throws IOException {
-        Files.copy(
-                HeadQuarter.class.getClassLoader().getResourceAsStream("ant/Executable_template"),
-                Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("Executable_template"),
-                StandardCopyOption.REPLACE_EXISTING);
-
-        Files.copy(
-                HeadQuarter.class.getClassLoader().getResourceAsStream("ant/build.xml"),
-                Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("build.xml"),
-                StandardCopyOption.REPLACE_EXISTING);
-    }
 
     public static String getAntRoot() {
         return System.getProperty(XENV_HQ_TMP_DIR, "src/main/resources/ant");
