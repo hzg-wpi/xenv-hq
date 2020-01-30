@@ -4,10 +4,9 @@ import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.mongodb.Block;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.UpdateOptions;
+import de.hzg.wpi.xenv.hq.configuration.camel.CamelManager;
 import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoute;
-import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoutesXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
@@ -41,7 +40,6 @@ import java.io.StringWriter;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -103,7 +101,7 @@ public class ConfigurationManager {
 
     private CollectionsDb collectionsDb;
 
-    private CamelDb camelDb;
+    private CamelManager camelManager;
     private PredatorManager predatorManager;
 
     private NexusXml getNexusFile() throws Exception {
@@ -141,46 +139,30 @@ public class ConfigurationManager {
     @Attribute
     @AttributeProperties(format = "xml")
     public String getCamelRoutesXml() {
-        CamelRoutesXml result = new CamelRoutesXml();
-
-        result.routes = StreamSupport.stream(camelDb.getRoutes()
-                .find()
-                .spliterator(), nonParallelStream)
-                .collect(Collectors.toList());
-
-        return XmlHelper.toXmlString(result);
+        return XmlHelper.toXmlString(camelManager.getCamelRoutesXml());
     }
 
     @Attribute
     public String[] getCamelRoutes() {
-        return StreamSupport.stream(camelDb.getRoutes()
-                .find()
-                .spliterator(), nonParallelStream)
-                .map(camelRoute -> camelRoute.id)
+        return camelManager.getCamelRoutes()
                 .toArray(String[]::new);
     }
 
     @Command
     public String getCamelRoute(String id) {
-        return StreamSupport.stream(camelDb.getRoutes()
-                .find(new BsonDocument("_id", new BsonString(id)))
-                .spliterator(), nonParallelStream)
-                .map(XmlHelper::toXmlString)
-                .findFirst().orElseThrow(() -> new NoSuchElementException(id));
+        return XmlHelper.toXmlString(camelManager.getCamelRoute(id));
     }
 
     @Command
     public void addOrReplaceCamelRoute(String camelRouteXml) throws Exception {
         CamelRoute update = XmlHelper.fromString(camelRouteXml, CamelRoute.class);
 
-        camelDb.getRoutes()
-                .findOneAndReplace(new BsonDocument("_id", new BsonString(update.id)), update, new FindOneAndReplaceOptions().upsert(true));
+        camelManager.addOrReplaceCamelRoute(update);
     }
 
     @Command
     public void deleteCamelRoute(String id) {
-        camelDb.getRoutes()
-                .deleteOne(new BsonDocument("_id", new BsonString(id)));
+        camelManager.deleteCamelRoute(id);
     }
 
     @Attribute
@@ -275,7 +257,7 @@ public class ConfigurationManager {
     @Init
     public void init() {
         dataSourcesDb = new DataSourceDb();
-        camelDb = new CamelDb();
+        camelManager = new CamelManager(new CamelDb());
         collectionsDb = new CollectionsDb();
         predatorManager = new PredatorManager(new PredatorDb());
 
@@ -286,7 +268,7 @@ public class ConfigurationManager {
     @Delete
     public void delete() {
         dataSourcesDb.close();
-        camelDb.close();
+        camelManager.close();
         predatorManager.close();
         collectionsDb.close();
 
