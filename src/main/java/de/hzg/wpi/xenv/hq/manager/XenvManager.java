@@ -1,10 +1,8 @@
 package de.hzg.wpi.xenv.hq.manager;
 
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.MoreExecutors;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
-import de.hzg.wpi.xenv.hq.profile.ProfileManager;
 import de.hzg.wpi.xenv.hq.util.FilesHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
 import fr.esrf.Tango.DevFailed;
@@ -36,8 +34,6 @@ import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
  */
 @Device
 public class XenvManager {
-    public static final String MANAGER_YML = "manager.yml";
-
     @DeviceManagement
     private DeviceManager deviceManager;
 
@@ -47,7 +43,6 @@ public class XenvManager {
     private volatile String status;
 
     private final Logger logger = LoggerFactory.getLogger(XenvManager.class);
-    private final ProfileManager profileManager = new ProfileManager();
     private final ExecutorService executorService = MoreExecutors.newDirectExecutorService();
     private Manager configuration;
 
@@ -74,7 +69,11 @@ public class XenvManager {
         FilesHelper.createIfNotExists("logs");
         FilesHelper.createIfNotExists("etc");
 
-        configuration = null;
+        configuration = YamlHelper.fromYamlFile(
+                Paths.get("config/manager.yml"),
+                Manager.class
+        );
+        ;
 
         servers = YamlHelper.fromYamlFile(
                 Paths.get("config/xenv-servers.yml"),
@@ -88,26 +87,8 @@ public class XenvManager {
         deviceManager.pushStatusChangeEvent(DeviceState.OFF.name());
     }
 
-    @Command
-    public void loadProfile(String name) throws Exception {
-        Preconditions.checkNotNull(name, "Set profile first!");
-
-        configuration = profileManager.loadProfile(name).manager;
-
-        servers = YamlHelper.fromYamlFile(
-                Paths.get("configuration/etc/xenv-servers.yml"),
-                TangoServers.class
-        );
-
-        deviceManager.pushStateChangeEvent(DeviceState.ON);
-        deviceManager.pushStatusChangeEvent("Profile set to " + name);
-    }
-
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
     public void startServer(String executable) {
-        Preconditions.checkNotNull(configuration, "load configuration first!");
-
-
         Runnable runnable = () -> {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
 
@@ -126,8 +107,6 @@ public class XenvManager {
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
     public void stopServer(String executable) throws DevFailed, NoSuchCommandException, TangoProxyException {
-        Preconditions.checkNotNull(configuration, "load configuration first!");
-
         AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
 
         TangoServer tangoServer = populateAntProjectWithProperties(configuration, executable, antProject);

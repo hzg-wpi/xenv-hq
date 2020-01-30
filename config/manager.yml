@@ -1,0 +1,6 @@
+tango_host: hzgxenvtest:10000
+instance_name: test
+tine_home: /home/khokhria/tine/database
+log_home: ../logs
+log_level: DEBUG
+

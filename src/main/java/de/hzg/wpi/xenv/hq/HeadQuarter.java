@@ -116,28 +116,6 @@ public class HeadQuarter {
         Files.createDirectory(Paths.get("logs"));
     }
 
-    @Command
-    public void load(String profile) {
-        logger.debug("Loading profile " + profile);
-        xenvManagers.forEach(xenvManager -> {
-            try {
-                xenvManager.loadProfile(profile);
-            } catch (Exception e) {
-                logger.error("XenvManager failed to load configuration", e);
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-                xenvManager.setState(DeviceState.FAULT);
-                xenvManager.setStatus("XenvManager failed to load configuration");
-            }
-        });
-
-        if(getState() != DeviceState.ALARM) {
-            deviceManager.pushStateChangeEvent(DeviceState.ON);
-            deviceManager.pushStatusChangeEvent("Profile set to " + profile);
-        }
-
-        logger.trace("Done.");
-    }
-
     @Attribute
     public String[] getXenvExecutables() {
         return XENV_EXECUTABLES;

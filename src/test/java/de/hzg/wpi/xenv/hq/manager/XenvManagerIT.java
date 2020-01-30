@@ -12,7 +12,6 @@ public class XenvManagerIT {
     public void startServer() throws Exception {
         XenvManager instance = new XenvManager();
         instance.init();
-        instance.loadProfile("test");
 
         instance.startServer("status_server");
     }
