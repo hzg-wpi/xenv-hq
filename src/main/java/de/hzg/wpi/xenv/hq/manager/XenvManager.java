@@ -294,37 +294,37 @@ public class XenvManager {
     private class AntBuildEventsSender implements BuildListener {
         @Override
         public void buildStarted(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void buildFinished(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void targetStarted(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void targetFinished(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void taskStarted(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+            deviceManager.pushStatusChangeEvent(event.getMessage()));
         }
 
         @Override
         public void taskFinished(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void messageLogged(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
     }
 }
