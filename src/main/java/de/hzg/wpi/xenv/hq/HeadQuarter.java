@@ -3,19 +3,15 @@ package de.hzg.wpi.xenv.hq;
 import com.google.common.base.Preconditions;
 import de.hzg.wpi.xenv.hq.configuration.ConfigurationManager;
 import de.hzg.wpi.xenv.hq.manager.XenvManager;
-import fr.esrf.Tango.DevFailed;
 import fr.esrf.Tango.DevVarLongStringArray;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tango.DeviceState;
-import org.tango.client.ez.proxy.NoSuchCommandException;
-import org.tango.client.ez.proxy.TangoProxyException;
 import org.tango.server.ServerManager;
 import org.tango.server.ServerManagerUtils;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
-import org.tango.utils.DevFailedUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -116,13 +112,7 @@ public class HeadQuarter {
     public void stopAll() {
         Arrays.stream(XENV_EXECUTABLES)
                 .flatMap(s -> xenvManagers.stream().map(xenvManager -> (Runnable) () -> {
-                    try {
                         xenvManager.stopServer(s);
-                    } catch (DevFailed devFailed) {
-                        DevFailedUtils.logDevFailed(devFailed, logger);
-                    } catch (NoSuchCommandException | TangoProxyException e) {
-                        logger.error(String.format("Failed to stop %s", s));
-                    }
                 }))
                 .parallel()
                 .forEach(Runnable::run);
@@ -162,14 +152,7 @@ public class HeadQuarter {
     @Command
     public void restartStatusServer() {
         xenvManagers.forEach(xenvManager -> {
-            try {
-                xenvManager.stopServer("status_server");
-            } catch (DevFailed devFailed) {
-                DevFailedUtils.logDevFailed(devFailed, logger);
-            } catch (NoSuchCommandException | TangoProxyException e) {
-                logger.error("Failed to stop StatusServer configuration");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
+            xenvManager.stopServer("status_server");
         });
 
         configurationManagers.forEach(ConfigurationManager::writeStatusServerConfiguration);
@@ -181,14 +164,7 @@ public class HeadQuarter {
     @Command
     public void restartDataFormatServer() {
         xenvManagers.forEach(xenvManager -> {
-            try {
                 xenvManager.stopServer("data_format_server");
-            } catch (DevFailed devFailed) {
-                DevFailedUtils.logDevFailed(devFailed, logger);
-            } catch (NoSuchCommandException | TangoProxyException e) {
-                logger.error("Failed to stop DataFormatServer");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
         });
 
         configurationManagers.forEach(ConfigurationManager::writeDataFormatServerConfiguration);
@@ -201,14 +177,7 @@ public class HeadQuarter {
     @Command
     public void restartCamelIntegration() {
         xenvManagers.forEach(xenvManager -> {
-            try {
                 xenvManager.stopServer("camel_integration");
-            } catch (DevFailed devFailed) {
-                DevFailedUtils.logDevFailed(devFailed, logger);
-            } catch (NoSuchCommandException | TangoProxyException e) {
-                logger.error("Failed to stop DataFormatServer");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
         });
 
 
@@ -221,15 +190,7 @@ public class HeadQuarter {
     @Command
     public void restartPreExperimentDataCollector() {
         xenvManagers.forEach(xenvManager -> {
-            try {
                 xenvManager.stopServer("predator");
-            } catch (DevFailed devFailed) {
-                DevFailedUtils.logDevFailed(devFailed, logger);
-                setState(DeviceState.ALARM);
-            } catch (NoSuchCommandException | TangoProxyException e) {
-                logger.error("Failed to stop DataFormatServer");
-                deviceManager.pushStateChangeEvent(DeviceState.ALARM);
-            }
         });
 
         configurationManagers.forEach(ConfigurationManager::writePreExperimentDataCollectorConfiguration);
