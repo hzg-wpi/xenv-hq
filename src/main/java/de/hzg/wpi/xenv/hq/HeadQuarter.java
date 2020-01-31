@@ -123,7 +123,7 @@ public class HeadQuarter {
     public void updateProfileCollections(DevVarLongStringArray collections) {
         configurationManagers.forEach(configurationManager -> {
             try {
-                configurationManager.updateProfileCollections(collections);
+                configurationManager.selectCollections(collections);
             } catch (Exception e) {
                 logger.error("Failed to update profile collections configuration");
                 deviceManager.pushStateChangeEvent(DeviceState.ALARM);

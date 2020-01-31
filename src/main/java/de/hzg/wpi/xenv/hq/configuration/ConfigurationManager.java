@@ -341,7 +341,7 @@ public class ConfigurationManager {
     }
 
     @Command
-    public void updateProfileCollections(DevVarLongStringArray collections) {
+    public void selectCollections(DevVarLongStringArray collections) {
         Preconditions.checkArgument(collections.lvalue.length == collections.svalue.length);
 
         collectionsManager.setSelectedCollections(Streams.zip(
