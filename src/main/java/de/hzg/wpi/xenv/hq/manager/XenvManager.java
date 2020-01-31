@@ -56,6 +56,13 @@ public class XenvManager {
                     .setNameFormat("manager-single-thread-%d")
                     .build()
     );
+    private final AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
+
+    {
+        antProject.getProject().addBuildListener(new AntBuildLogger());
+        antProject.getProject().addBuildListener(new AntBuildEventsSender());
+    }
+
     private Manager configuration;
 
     private TangoServers servers;
@@ -125,14 +132,10 @@ public class XenvManager {
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
+    @StateMachine(endState = DeviceState.ON)
     public void startServer(String executable) {
         Runnable runnable = () -> {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
-
-            AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
-
-            antProject.getProject().addBuildListener(new AntBuildLogger());
-            antProject.getProject().addBuildListener(new AntBuildEventsSender());
 
             populateAntProjectWithProperties(configuration, executable, antProject);
 
@@ -146,12 +149,11 @@ public class XenvManager {
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
+    @StateMachine(endState = DeviceState.ON)
     public void stopServer(final String executable) {
         Runnable runnable = new Runnable() {
             public void run() {
                 MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
-
-                AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
 
                 TangoServer tangoServer = populateAntProjectWithProperties(configuration, executable, antProject);
 
@@ -169,16 +171,21 @@ public class XenvManager {
 
                         antProject.getProject().setProperty("pid", pid);
                         new AntTaskExecutor("kill-executable", antProject).run();
+                        deviceManager.pushStatusChangeEvent(String.format("Server %s has been stopped", executable));
                     } catch (IOException | BuildException e) {
                         logger.warn("Failed to kill executable by pid due to exception", e);
+                        deviceManager.pushStateChangeEvent(DeviceState.ALARM);
+                        deviceManager.pushStatusChangeEvent(String.format("Failed to kill executable by pid due to exception: %s", e.getClass().getSimpleName()));
                         new AntTaskExecutor("force-kill-executable", antProject).run();
                     }
                 } else {
                     logger.warn("{} file does not exists. Trying to kill {} via DServer", pidFile.toString(), executable);
+                    deviceManager.pushStateChangeEvent(DeviceState.ALARM);
+                    deviceManager.pushStatusChangeEvent(String.format("%s file does not exists. Trying to kill %s via DServer", pidFile.toString(), executable));
                     tryToKillViaDServer(shortClassName);
                 }
 
-                deviceManager.pushStatusChangeEvent(String.format("Server %s has been stopped", executable));
+
             }
         };
         executorService.submit(runnable);
@@ -190,12 +197,15 @@ public class XenvManager {
                     DeviceProxyFactory.get("dserver/" + shortClassName + "/" + configuration.instance_name, configuration.tango_host));
 
             dserver.executeCommand("Kill");
+            deviceManager.pushStatusChangeEvent(String.format("Server %s has been stopped", shortClassName));
         } catch (TangoProxyException | NoSuchCommandException e) {
             logger.warn("Failed to kill {} via DServer", shortClassName);
-            deviceManager.pushStatusChangeEvent(String.format("%d: Failed to kill %s via DServer", System.currentTimeMillis(), shortClassName));
+            deviceManager.pushStateChangeEvent(DeviceState.FAULT);
+            deviceManager.pushStatusChangeEvent(String.format("Failed to kill %s via DServer", shortClassName));
         } catch (DevFailed devFailed) {
             logger.warn("Failed to kill {} via DServer", shortClassName);
-            deviceManager.pushStatusChangeEvent(String.format("%d: Failed to kill %s via DServer", System.currentTimeMillis(), shortClassName));
+            deviceManager.pushStateChangeEvent(DeviceState.FAULT);
+            deviceManager.pushStatusChangeEvent(String.format("Failed to kill %s via DServer", shortClassName));
             DevFailedUtils.logDevFailed(devFailed, logger);
         }
     }
@@ -225,6 +235,8 @@ public class XenvManager {
                 tangoServer = servers.predator;
                 break;
             default:
+                deviceManager.pushStateChangeEvent(DeviceState.FAULT);
+                deviceManager.pushStatusChangeEvent("Unknown executable: " + executable);
                 throw new IllegalArgumentException("Unknown executable: " + executable);
         }
 
@@ -257,32 +269,56 @@ public class XenvManager {
     private class AntBuildLogger implements BuildListener {
         @Override
         public void buildStarted(BuildEvent event) {
-            logger.debug(event.getMessage());
+            if (event.getException() == null) {
+                logger.debug("Build started.");
+            } else {
+                logger.warn("Build started with error.", event.getException());
+            }
         }
 
         @Override
         public void buildFinished(BuildEvent event) {
-            logger.debug(event.getMessage());
+            if (event.getException() == null) {
+                logger.debug("Build finished.");
+            } else {
+                logger.warn("Build finished with error.", event.getException());
+            }
         }
 
         @Override
         public void targetStarted(BuildEvent event) {
-            logger.debug(event.getMessage());
+            if (event.getException() == null) {
+                logger.debug("Target {} started.", event.getTarget().getName());
+            } else {
+                logger.warn("Task started with error.", event.getException());
+            }
         }
 
         @Override
         public void targetFinished(BuildEvent event) {
-            logger.debug(event.getMessage());
+            if (event.getException() == null) {
+                logger.debug("Target {} finished.", event.getTarget().getName());
+            } else {
+                logger.warn("Task finished with error.", event.getException());
+            }
         }
 
         @Override
         public void taskStarted(BuildEvent event) {
-            logger.debug(event.getMessage());
+            if (event.getException() == null) {
+                logger.debug("Task {} started.", event.getTask().getTaskName());
+            } else {
+                logger.warn("Task started with error.", event.getException());
+            }
         }
 
         @Override
         public void taskFinished(BuildEvent event) {
-            logger.debug(event.getMessage());
+            if (event.getException() == null) {
+                logger.debug("Task {} finished.", event.getTask().getTaskName());
+            } else {
+                logger.warn("Task finished with error.", event.getException());
+            }
         }
 
         @Override
@@ -294,32 +330,31 @@ public class XenvManager {
     private class AntBuildEventsSender implements BuildListener {
         @Override
         public void buildStarted(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void buildFinished(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void targetStarted(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void targetFinished(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void taskStarted(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
         public void taskFinished(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(event.getMessage());
+            if (event.getException() == null) {
+                deviceManager.pushStatusChangeEvent(String.format("Task %s finished.", event.getTask().getTaskName()));
+            } else {
+                deviceManager.pushStatusChangeEvent(String.format("Task %s finished with error: %s", event.getTask().getTaskName(), event.getException().getClass().getSimpleName()));
+            }
         }
 
         @Override
