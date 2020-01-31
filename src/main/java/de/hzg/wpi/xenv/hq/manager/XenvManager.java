@@ -314,7 +314,7 @@ public class XenvManager {
 
         @Override
         public void taskStarted(BuildEvent event) {
-            deviceManager.pushStatusChangeEvent(event.getMessage()));
+            deviceManager.pushStatusChangeEvent(event.getMessage());
         }
 
         @Override
