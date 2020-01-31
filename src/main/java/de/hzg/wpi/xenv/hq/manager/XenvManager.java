@@ -1,6 +1,6 @@
 package de.hzg.wpi.xenv.hq.manager;
 
-import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.hzg.wpi.xenv.hq.ant.AntProject;
 import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
 import de.hzg.wpi.xenv.hq.util.FilesHelper;
@@ -23,6 +23,7 @@ import org.tango.client.ez.proxy.TangoProxyException;
 import org.tango.server.ServerManager;
 import org.tango.server.annotation.*;
 import org.tango.server.device.DeviceManager;
+import org.tango.utils.DevFailedUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
 
@@ -48,7 +50,12 @@ public class XenvManager {
     private volatile String status;
 
     private final Logger logger = LoggerFactory.getLogger(XenvManager.class);
-    private final ExecutorService executorService = MoreExecutors.newDirectExecutorService();
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor(
+            new ThreadFactoryBuilder()
+                    .setDaemon(true)
+                    .setNameFormat("manager-single-thread-%d")
+                    .build()
+    );
     private Manager configuration;
 
     private TangoServers servers;
@@ -124,42 +131,8 @@ public class XenvManager {
 
             AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
 
-            antProject.getProject().addBuildListener(new BuildListener() {
-                @Override
-                public void buildStarted(BuildEvent event) {
-                    logger.info(event.getMessage());
-                }
-
-                @Override
-                public void buildFinished(BuildEvent event) {
-                    logger.info(event.getMessage());
-                }
-
-                @Override
-                public void targetStarted(BuildEvent event) {
-                    logger.info(event.getMessage());
-                }
-
-                @Override
-                public void targetFinished(BuildEvent event) {
-                    logger.info(event.getMessage());
-                }
-
-                @Override
-                public void taskStarted(BuildEvent event) {
-                    logger.info(event.getMessage());
-                }
-
-                @Override
-                public void taskFinished(BuildEvent event) {
-                    logger.info(event.getMessage());
-                }
-
-                @Override
-                public void messageLogged(BuildEvent event) {
-                    logger.info(event.getMessage());
-                }
-            });
+            antProject.getProject().addBuildListener(new AntBuildLogger());
+            antProject.getProject().addBuildListener(new AntBuildEventsSender());
 
             populateAntProjectWithProperties(configuration, executable, antProject);
 
@@ -173,42 +146,58 @@ public class XenvManager {
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
-    public void stopServer(String executable) throws DevFailed, NoSuchCommandException, TangoProxyException {
-        AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
+    public void stopServer(final String executable) {
+        Runnable runnable = new Runnable() {
+            public void run() {
+                MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
 
-        TangoServer tangoServer = populateAntProjectWithProperties(configuration, executable, antProject);
+                AntProject antProject = new AntProject(System.getProperty(XENV_HQ_TMP_DIR) + "/build.xml");
 
-        String shortClassName = ClassUtils.getShortClassName(tangoServer.main_class);
+                TangoServer tangoServer = populateAntProjectWithProperties(configuration, executable, antProject);
 
-        Path pidFile = Paths.get("bin")
-                .resolve(
-                        shortClassName + ".pid");
+                String shortClassName = ClassUtils.getShortClassName(tangoServer.main_class);
 
-        if (Files.exists(pidFile)) {
-            try {
-                String pid = new String(
-                        Files.readAllBytes(
-                                pidFile));
+                Path pidFile = Paths.get("bin")
+                        .resolve(
+                                shortClassName + ".pid");
 
-                antProject.getProject().setProperty("pid", pid);
-                new AntTaskExecutor("kill-executable", antProject).run();
-            } catch (IOException | BuildException e) {
-                logger.warn("Failed to kill executable by pid due to exception", e);
-                new AntTaskExecutor("force-kill-executable", antProject).run();
+                if (Files.exists(pidFile)) {
+                    try {
+                        String pid = new String(
+                                Files.readAllBytes(
+                                        pidFile));
+
+                        antProject.getProject().setProperty("pid", pid);
+                        new AntTaskExecutor("kill-executable", antProject).run();
+                    } catch (IOException | BuildException e) {
+                        logger.warn("Failed to kill executable by pid due to exception", e);
+                        new AntTaskExecutor("force-kill-executable", antProject).run();
+                    }
+                } else {
+                    logger.warn("{} file does not exists. Trying to kill {} via DServer", pidFile.toString(), executable);
+                    tryToKillViaDServer(shortClassName);
+                }
+
+                deviceManager.pushStatusChangeEvent(String.format("Server %s has been stopped", executable));
             }
-        } else {
-            logger.warn("{} file does not exists. Trying to kill {} via DServer",pidFile.toString(),executable);
-            tryToKillViaDServer(shortClassName);
-        }
-
-        deviceManager.pushStatusChangeEvent(String.format("Server %s has been stopped", executable));
+        };
+        executorService.submit(runnable);
     }
 
-    private void tryToKillViaDServer(String shortClassName) throws TangoProxyException, DevFailed, org.tango.client.ez.proxy.NoSuchCommandException {
-        TangoProxy dserver = TangoProxies.newDeviceProxyWrapper(
-                DeviceProxyFactory.get("dserver/" + shortClassName + "/" + configuration.instance_name, configuration.tango_host));
+    private void tryToKillViaDServer(String shortClassName) {
+        try {
+            TangoProxy dserver = TangoProxies.newDeviceProxyWrapper(
+                    DeviceProxyFactory.get("dserver/" + shortClassName + "/" + configuration.instance_name, configuration.tango_host));
 
-        dserver.executeCommand("Kill");
+            dserver.executeCommand("Kill");
+        } catch (TangoProxyException | NoSuchCommandException e) {
+            logger.warn("Failed to kill {} via DServer", shortClassName);
+            deviceManager.pushStatusChangeEvent(String.format("%d: Failed to kill %s via DServer", System.currentTimeMillis(), shortClassName));
+        } catch (DevFailed devFailed) {
+            logger.warn("Failed to kill {} via DServer", shortClassName);
+            deviceManager.pushStatusChangeEvent(String.format("%d: Failed to kill %s via DServer", System.currentTimeMillis(), shortClassName));
+            DevFailedUtils.logDevFailed(devFailed, logger);
+        }
     }
 
     private TangoServer populateAntProjectWithProperties(Manager configuration, String executable, AntProject antProject) {
@@ -263,5 +252,79 @@ public class XenvManager {
 
     public void setStatus(String status) {
         this.status = String.format("%d: %s",System.currentTimeMillis(),status);
+    }
+
+    private class AntBuildLogger implements BuildListener {
+        @Override
+        public void buildStarted(BuildEvent event) {
+            logger.debug(event.getMessage());
+        }
+
+        @Override
+        public void buildFinished(BuildEvent event) {
+            logger.debug(event.getMessage());
+        }
+
+        @Override
+        public void targetStarted(BuildEvent event) {
+            logger.debug(event.getMessage());
+        }
+
+        @Override
+        public void targetFinished(BuildEvent event) {
+            logger.debug(event.getMessage());
+        }
+
+        @Override
+        public void taskStarted(BuildEvent event) {
+            logger.debug(event.getMessage());
+        }
+
+        @Override
+        public void taskFinished(BuildEvent event) {
+            logger.debug(event.getMessage());
+        }
+
+        @Override
+        public void messageLogged(BuildEvent event) {
+            logger.debug(event.getMessage());
+        }
+    }
+
+    private class AntBuildEventsSender implements BuildListener {
+        @Override
+        public void buildStarted(BuildEvent event) {
+            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+        }
+
+        @Override
+        public void buildFinished(BuildEvent event) {
+            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+        }
+
+        @Override
+        public void targetStarted(BuildEvent event) {
+            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+        }
+
+        @Override
+        public void targetFinished(BuildEvent event) {
+            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+        }
+
+        @Override
+        public void taskStarted(BuildEvent event) {
+            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+        }
+
+        @Override
+        public void taskFinished(BuildEvent event) {
+            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+        }
+
+        @Override
+        public void messageLogged(BuildEvent event) {
+            deviceManager.pushStatusChangeEvent(String.format("%d: %s", System.currentTimeMillis(), event.getMessage()));
+        }
     }
 }
