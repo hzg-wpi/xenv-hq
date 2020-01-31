@@ -82,7 +82,6 @@ public class XenvManager {
     }
 
     @Init
-    @StateMachine(endState = DeviceState.STANDBY)
     public void init() throws IOException {
         FilesHelper.createIfNotExists("bin");
         FilesHelper.createIfNotExists("logs");
@@ -98,6 +97,9 @@ public class XenvManager {
                 Paths.get("config/xenv-servers.yml"),
                 TangoServers.class
         );
+
+        deviceManager.pushStateChangeEvent(DeviceState.ON);
+        deviceManager.pushStatusChangeEvent("XenvManager has been initialized.");
     }
 
     @Delete
@@ -132,7 +134,6 @@ public class XenvManager {
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
-    @StateMachine(endState = DeviceState.ON)
     public void startServer(String executable) {
         Runnable runnable = () -> {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
@@ -145,11 +146,11 @@ public class XenvManager {
 
             deviceManager.pushStatusChangeEvent(String.format("Server %s has been launched.", executable));
         };
-        executorService.execute(runnable);
+        executorService.submit(runnable);
+        deviceManager.pushStateChangeEvent(DeviceState.ON);
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
-    @StateMachine(endState = DeviceState.ON)
     public void stopServer(final String executable) {
         Runnable runnable = new Runnable() {
             public void run() {
@@ -189,6 +190,7 @@ public class XenvManager {
             }
         };
         executorService.submit(runnable);
+        deviceManager.pushStateChangeEvent(DeviceState.ON);
     }
 
     private void tryToKillViaDServer(String shortClassName) {

@@ -70,7 +70,8 @@ public class HeadQuarter {
         Preconditions.checkState(!xenvManagers.isEmpty());
         Preconditions.checkState(!configurationManagers.isEmpty());
 
-        deviceManager.pushStateChangeEvent(DeviceState.STANDBY);
+        deviceManager.pushStateChangeEvent(DeviceState.ON);
+        deviceManager.pushStatusChangeEvent("HeadQuarter has been initialized.");
     }
 
     @Delete

@@ -298,7 +298,7 @@ public class ConfigurationManager {
         collectionsManager = new CollectionsManager(new CollectionsDb(), new DataSourceDb());
         predatorManager = new PredatorManager(new PredatorDb());
 
-        deviceManager.pushStateChangeEvent(DeviceState.STANDBY);
+        deviceManager.pushStateChangeEvent(DeviceState.ON);
         deviceManager.pushStatusChangeEvent("ConfigurationManager has been initialized.");
     }
 
