@@ -340,6 +340,12 @@ public class ConfigurationManager {
         collectionsManager.deleteDataSource(collection, dataSource);
     }
 
+    @Attribute
+    public String getSelectedCollections() {
+        return new Gson().toJson(collectionsManager.getSelectedCollections()
+                .toArray());
+    }
+
     @Command
     public void selectCollections(DevVarLongStringArray collections) {
         Preconditions.checkArgument(collections.lvalue.length == collections.svalue.length);

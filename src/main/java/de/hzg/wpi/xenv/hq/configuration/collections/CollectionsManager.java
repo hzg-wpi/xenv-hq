@@ -89,6 +89,10 @@ public class CollectionsManager implements Closeable {
                 .deleteOne(new Document("_id", dataSource.id));
     }
 
+    public Stream<Collection> getSelectedCollections() {
+        return StreamSupport.stream(collectionsDb.getCollections().find().spliterator(), nonParallelStream);
+    }
+
     public void setSelectedCollections(Stream<Collection> collections) {
         //TODO potentially may lead to falsy selected collections, if param collections is less than total number of collections
         List<WriteModel<Collection>> updates = new ArrayList<>(collections
