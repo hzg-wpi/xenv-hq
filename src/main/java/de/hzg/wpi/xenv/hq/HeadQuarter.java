@@ -86,12 +86,14 @@ public class HeadQuarter {
             try {
                 FileUtils.deleteDirectory(Paths.get(s).toFile());
             } catch (IOException e) {
-                logger.error("Failed to stop StatusServer configuration");
+                logger.error("Failed to delete directory " + s, e);
                 deviceManager.pushStateChangeEvent(DeviceState.ALARM);
+                deviceManager.pushStatusChangeEvent("Failed to delete directory " + s);
             }
         });
 
         Files.createDirectory(Paths.get("logs"));
+        deviceManager.pushStateChangeEvent(DeviceState.ON);
     }
 
     @Attribute
