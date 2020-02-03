@@ -287,8 +287,9 @@ public class ConfigurationManager {
         this.collection = collection;
     }
 
-    @Command
-    public String getDataSources(String collection) {
+    @Attribute
+    public String getDataSources() {
+        Preconditions.checkState(collection != null, "Collection must be set prior this operation!");
         return new Gson().toJson(collectionsManager.getDataSources(collection).toArray());
     }
 
