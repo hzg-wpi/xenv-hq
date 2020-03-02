@@ -4,7 +4,7 @@
 
     <groupId>de.hzg.wpi.xenv</groupId>
     <artifactId>HeadQuarter</artifactId>
-    <version>2.2</version>
+    <version>2.3-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <developers>
@@ -25,7 +25,7 @@
         <connection>scm:git:git@github.com:${github.organization}/${github.repo}.git</connection>
         <developerConnection>scm:git:git@github.com:${github.organization}/${github.repo}.git</developerConnection>
         <url>https://github.com/hzg-wpi/${github.repo}</url>
-        <tag>HeadQuarter-2.2</tag>
+        <tag>HEAD</tag>
     </scm>
 
 
