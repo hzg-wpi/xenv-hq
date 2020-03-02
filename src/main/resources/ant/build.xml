@@ -10,7 +10,7 @@
     <target name="prepare-executable">
         <copy tofile="bin/${executable}" overwrite="true">
             <fileset dir="${executable_template_dir}">
-                <include name="Executable_template"/>
+                <include name="template"/>
             </fileset>
             <filterset>
                 <filter token="TANGO_HOST" value="${tango_host}"/>

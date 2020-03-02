@@ -41,6 +41,8 @@ import static de.hzg.wpi.xenv.hq.HeadQuarter.XENV_HQ_TMP_DIR;
  */
 @Device
 public class XenvManager {
+    private final Path configPath = Paths.get("config");
+
     @DeviceManagement
     private DeviceManager deviceManager;
 
@@ -86,7 +88,7 @@ public class XenvManager {
         FilesHelper.createIfNotExists("etc");
 
         configuration = YamlHelper.fromYamlFile(
-                Paths.get("config/manager.yml"),
+                configPath.resolve("manager.yml"),
                 Manager.class
         );
         ;
@@ -116,11 +118,6 @@ public class XenvManager {
 
     public static void extractResources() throws IOException {
         Files.copy(
-                XenvManager.class.getClassLoader().getResourceAsStream("ant/Executable_template"),
-                Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("Executable_template"),
-                StandardCopyOption.REPLACE_EXISTING);
-
-        Files.copy(
                 XenvManager.class.getClassLoader().getResourceAsStream("ant/build.xml"),
                 Paths.get(System.getProperty(XENV_HQ_TMP_DIR)).resolve("build.xml"),
                 StandardCopyOption.REPLACE_EXISTING);
@@ -129,7 +126,7 @@ public class XenvManager {
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
     public void startServer(String executable) throws IOException {
         TangoServers servers = YamlHelper.fromYamlFile(
-                Paths.get("config/xenv-servers.yml"),
+                configPath.resolve("xenv-servers.yml"),
                 TangoServers.class
         );
 
@@ -151,7 +148,7 @@ public class XenvManager {
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
     public void stopServer(final String executable) throws IOException {
         TangoServers servers = YamlHelper.fromYamlFile(
-                Paths.get("config/xenv-servers.yml"),
+                configPath.resolve("xenv-servers.yml"),
                 TangoServers.class
         );
 
@@ -216,7 +213,7 @@ public class XenvManager {
     }
 
     private TangoServer populateAntProjectWithProperties(Manager configuration, TangoServers servers, String executable, AntProject antProject) {
-        antProject.getProject().setProperty("executable_template_dir", System.getProperty(XENV_HQ_TMP_DIR));
+        antProject.getProject().setProperty("executable_template_dir", configPath.toAbsolutePath().toString());
         antProject.getProject().setProperty("tango_host", configuration.tango_host);
         antProject.getProject().setProperty("instance_name", configuration.instance_name);
         antProject.getProject().setProperty("tine_home", configuration.tine_home);
