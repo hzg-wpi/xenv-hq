@@ -25,10 +25,14 @@ echo "Using MAX_RAM=$MAX_RAM"
 
 echo "Using XENV_ROOT=$XENV_ROOT"
 
-JAVA_OPTS="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$LOG_HOME/$SERVER_NAME.hprof -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:$LOG_HOME/$SERVER_NAME.loggc -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -server -Xmx$MAX_RAM -Xshare:off -XX:+UseG1GC -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64
+echo "Using java:"
+$($JAVA_HOME/bin/java -version)
+
+JAVA_OPTS="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$LOG_HOME/$SERVER_NAME.hprof -server -Xmx$MAX_RAM -Xshare:off -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc=info:file=$LOG_HOME/$SERVER_NAME.gc.log.$(/bin/date +%Y-%m-%d-%H%M%S):time,uptime,pid:filecount=5,filesize=4096* -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
 echo "Using JAVA_OPTS=$JAVA_OPTS"
-JAVA_ARGS="-DTANGO_HOST=$TANGO_HOST -DXENV_ROOT=$XENV_ROOT -DLOG_HOME=$LOG_HOME -DLOG_LEVEL=$LOG_LEVEL -Dlogback.configurationFile=../configuration/etc/logback.xml -jar $SERVER_NAME-$VERSION.jar $INSTANCE_NAME $MAIN_CLASS $INSTANCE_NAME"
+JAVA_ARGS="-DTANGO_HOST=$TANGO_HOST -DXENV_ROOT=$XENV_ROOT -DLOG_HOME=$LOG_HOME -DLOG_LEVEL=$LOG_LEVEL -Dlogback.configurationFile=../config/logback.xml -jar $SERVER_NAME-$VERSION.jar $INSTANCE_NAME $MAIN_CLASS $INSTANCE_NAME"
 echo "Using JAVA_ARGS=$JAVA_ARGS"
 
 
-/usr/bin/java $JAVA_OPTS $JAVA_ARGS > $LOG_HOME/$SERVER_NAME.out 2>&1 &
+$JAVA_HOME/bin/java $JAVA_OPTS $JAVA_ARGS > $LOG_HOME/$SERVER_NAME.out 2>&1 &

@@ -1,18 +1,18 @@
 package de.hzg.wpi.xenv.hq.util.yaml;
 
 import de.hzg.wpi.xenv.hq.manager.Manager;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-
-import static de.hzg.wpi.xenv.hq.HeadQuarter.PROFILES_ROOT;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 2/22/19
  */
 public class YamlHelperIT {
+    public static final String PROFILES_ROOT = "config";
 
     @Test
     public void fromString() {
@@ -24,15 +24,16 @@ public class YamlHelperIT {
     }
 
     @Test
+    @Ignore
     public void test() throws IOException {
-        Object result = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve("test/PreExperimentDataCollector/meta.yaml"), Object.class);
+        Object result = YamlHelper.fromYamlFile(Paths.get("etc").resolve("PreExperimentDataCollector/meta.yaml"), Object.class);
 
         System.out.println(YamlHelper.toYamlString(result));
     }
 
     @Test
     public void test_manager() throws IOException {
-        Manager result = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve("test/manager.yml"), Manager.class);
+        Manager result = YamlHelper.fromYamlFile(Paths.get(PROFILES_ROOT).resolve("manager.yml"), Manager.class);
 
         System.out.println(YamlHelper.toYamlString(result));
     }

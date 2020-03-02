@@ -19,6 +19,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -26,7 +28,6 @@ import java.util.Properties;
  */
 @Device
 public class HeadQuarter {
-    public static final String PROFILES_ROOT = "configuration/profiles";
     public static final String[] XENV_EXECUTABLES = {"camel_integration", "data_format_server", "status_server", "predator"};
     public static final String XENV_HQ_TMP_DIR = "xenv.hq.tmp.dir";
 
@@ -57,10 +58,6 @@ public class HeadQuarter {
     }
 
 
-
-    public static String getAntRoot() {
-        return System.getProperty(XENV_HQ_TMP_DIR, "src/main/resources/ant");
-    }
 
     @Init
     public void init() {
@@ -101,24 +98,50 @@ public class HeadQuarter {
         return XENV_EXECUTABLES;
     }
 
+    static <T> Consumer<T> throwingConsumerWrapper(
+            ThrowingConsumer<T, Exception> throwingConsumer) {
+
+        return i -> {
+            try {
+                throwingConsumer.accept(i);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        };
+    }
+
     @Command
     public void startAll() {
         Arrays.stream(XENV_EXECUTABLES)
-                .flatMap(s -> xenvManagers.stream().map(xenvManager -> (Runnable) () -> {
+                .flatMap(s -> xenvManagers.stream().map(xenvManager -> (Callable<Void>) () -> {
                     xenvManager.startServer(s);
+                    return null;
                 }))
                 .parallel()
-                .forEach(Runnable::run);
+                .forEach(throwingConsumerWrapper(Callable::call));
     }
 
     @Command
     public void stopAll() {
         Arrays.stream(XENV_EXECUTABLES)
-                .flatMap(s -> xenvManagers.stream().map(xenvManager -> (Runnable) () -> {
+                .flatMap(s -> xenvManagers.stream().map(xenvManager -> (Callable<Void>) () -> {
                         xenvManager.stopServer(s);
+                    return null;
                 }))
                 .parallel()
-                .forEach(Runnable::run);
+                .forEach(throwingConsumerWrapper(Callable::call));
+    }
+
+    @Command
+    public void restartStatusServer() {
+        xenvManagers.forEach(throwingConsumerWrapper(xenvManager -> {
+            xenvManager.stopServer("status_server");
+        }));
+
+        configurationManagers.forEach(ConfigurationManager::writeStatusServerConfiguration);
+
+        xenvManagers.forEach(throwingConsumerWrapper(xenvManager -> xenvManager.startServer("status_server")));
+        logger.trace("Done.");
     }
 
 
@@ -153,53 +176,46 @@ public class HeadQuarter {
     }
 
     @Command
-    public void restartStatusServer() {
-        xenvManagers.forEach(xenvManager -> {
-            xenvManager.stopServer("status_server");
-        });
-
-        configurationManagers.forEach(ConfigurationManager::writeStatusServerConfiguration);
-
-        xenvManagers.forEach(xenvManager -> xenvManager.startServer("status_server"));
-        logger.trace("Done.");
-    }
-
-    @Command
     public void restartDataFormatServer() {
-        xenvManagers.forEach(xenvManager -> {
+        xenvManagers.forEach(throwingConsumerWrapper(xenvManager -> {
                 xenvManager.stopServer("data_format_server");
-        });
+        }));
 
         configurationManagers.forEach(ConfigurationManager::writeDataFormatServerConfiguration);
 
-        xenvManagers.forEach(xenvManager -> xenvManager.startServer("data_format_server"));
+        xenvManagers.forEach(throwingConsumerWrapper(xenvManager -> xenvManager.startServer("data_format_server")));
         logger.trace("Done.");
     }
 
     //TODO move to waltz XenvHQ server side
     @Command
     public void restartCamelIntegration() {
-        xenvManagers.forEach(xenvManager -> {
+        xenvManagers.forEach(throwingConsumerWrapper(xenvManager -> {
                 xenvManager.stopServer("camel_integration");
-        });
+        }));
 
 
         configurationManagers.forEach(ConfigurationManager::writeCamelConfiguration);
 
-        xenvManagers.forEach(xenvManager -> xenvManager.startServer("camel_integration"));
+        xenvManagers.forEach(throwingConsumerWrapper(xenvManager -> xenvManager.startServer("camel_integration")));
         logger.trace("Done.");
     }
 
     @Command
     public void restartPreExperimentDataCollector() {
-        xenvManagers.forEach(xenvManager -> {
+        xenvManagers.forEach(throwingConsumerWrapper(xenvManager -> {
                 xenvManager.stopServer("predator");
-        });
+        }));
 
         configurationManagers.forEach(ConfigurationManager::writePreExperimentDataCollectorConfiguration);
 
-        xenvManagers.forEach(xenvManager -> xenvManager.startServer("predator"));
+        xenvManagers.forEach(throwingConsumerWrapper(xenvManager -> xenvManager.startServer("predator")));
         logger.trace("Done.");
+    }
+
+    @FunctionalInterface
+    public static interface ThrowingConsumer<T, E extends Exception> {
+        void accept(T t) throws E;
     }
 
     private static void setSystemProperties() throws IOException {

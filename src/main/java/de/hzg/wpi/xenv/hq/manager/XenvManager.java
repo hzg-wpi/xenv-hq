@@ -65,8 +65,6 @@ public class XenvManager {
 
     private Manager configuration;
 
-    private TangoServers servers;
-
     public void setDeviceManager(DeviceManager deviceManager) {
         this.deviceManager = deviceManager;
     }
@@ -92,11 +90,6 @@ public class XenvManager {
                 Manager.class
         );
         ;
-
-        servers = YamlHelper.fromYamlFile(
-                Paths.get("config/xenv-servers.yml"),
-                TangoServers.class
-        );
 
         deviceManager.pushStateChangeEvent(DeviceState.ON);
         deviceManager.pushStatusChangeEvent("XenvManager has been initialized.");
@@ -134,11 +127,16 @@ public class XenvManager {
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
-    public void startServer(String executable) {
+    public void startServer(String executable) throws IOException {
+        TangoServers servers = YamlHelper.fromYamlFile(
+                Paths.get("config/xenv-servers.yml"),
+                TangoServers.class
+        );
+
         Runnable runnable = () -> {
             MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
 
-            populateAntProjectWithProperties(configuration, executable, antProject);
+            populateAntProjectWithProperties(configuration, servers, executable, antProject);
 
             new AntTaskExecutor("prepare-executable", antProject).run();
             new AntTaskExecutor("fetch-executable-jar", antProject).run();
@@ -151,12 +149,17 @@ public class XenvManager {
     }
 
     @Command(inTypeDesc = "status_server|data_format_server|camel_integration|predator")
-    public void stopServer(final String executable) {
+    public void stopServer(final String executable) throws IOException {
+        TangoServers servers = YamlHelper.fromYamlFile(
+                Paths.get("config/xenv-servers.yml"),
+                TangoServers.class
+        );
+
         Runnable runnable = new Runnable() {
             public void run() {
                 MDC.setContextMap(deviceManager.getDevice().getMdcContextMap());
 
-                TangoServer tangoServer = populateAntProjectWithProperties(configuration, executable, antProject);
+                TangoServer tangoServer = populateAntProjectWithProperties(configuration, servers, executable, antProject);
 
                 String shortClassName = ClassUtils.getShortClassName(tangoServer.main_class);
 
@@ -212,7 +215,7 @@ public class XenvManager {
         }
     }
 
-    private TangoServer populateAntProjectWithProperties(Manager configuration, String executable, AntProject antProject) {
+    private TangoServer populateAntProjectWithProperties(Manager configuration, TangoServers servers, String executable, AntProject antProject) {
         antProject.getProject().setProperty("executable_template_dir", System.getProperty(XENV_HQ_TMP_DIR));
         antProject.getProject().setProperty("tango_host", configuration.tango_host);
         antProject.getProject().setProperty("instance_name", configuration.instance_name);
