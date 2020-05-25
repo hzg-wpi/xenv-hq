@@ -1,0 +1,49 @@
+- name: Fieldset form example
+  id: frmFieldset
+  type: fieldset
+  help: >
+    This form demonstrates a typical fieldset form.
+    The form has string, number and text fields, all required.
+  fields:
+    - name: A string field
+      id: myString
+      type: string
+      description: A string field
+      validation: required
+      visibility: web
+      readonly: false
+    - name: A number field
+      id: myNumber
+      type: number
+      description: A number field
+      validation: required,custom[integer]
+      visibility: web
+      readonly: false
+    - name: A double field
+      id: myDouble
+      type: double
+      description: A double field
+      validation: required,custom[number]
+      visibility: web
+      readonly: false
+    - name: A text field
+      id: myText
+      type: text
+      description: A text field
+      validation: required
+      visibility: web
+      readonly: false
+    - name: A readonly field
+      id: myReadOnly
+      type: text
+      description: A text field
+      validation: none
+      visibility: web
+      readonly: true
+    - name: A tango-only field
+      id: myTangoOnly
+      type: text
+      description: A text field
+      validation: none
+      visibility: tango
+      readonly: false

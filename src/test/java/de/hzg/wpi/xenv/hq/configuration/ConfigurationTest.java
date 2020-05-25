@@ -121,7 +121,7 @@ public class ConfigurationTest {
 
     @Test
     @Ignore
-    public void testCamel() {
+    public void migrateCamel() {
         System.setProperty("mongodb.host", "hzgxenvtest");
 
         Mongo mongo = new CamelDb();
@@ -157,10 +157,10 @@ public class ConfigurationTest {
 
     @Test
     @Ignore
-    public void testPredator() throws Exception {
+    public void migratePredator() throws Exception {
         System.setProperty("mongodb.host", "hzgxenvtest");
 
-        Path path = Paths.get("configuration/profiles/test/PreExperimentDataCollector");//from target
+        Path path = Paths.get("target/test-classes");//from target
 
         String predatorMeta = "meta.yaml";
 
