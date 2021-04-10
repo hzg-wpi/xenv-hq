@@ -41,6 +41,7 @@ public class CollectionsManager implements Closeable {
 
     public void deleteDataSourceCollection(String collectionId) {
         dataSourceDb.getMongoDb().getCollection(collectionId).drop();
+        collectionsDb.getCollections().deleteOne(new BsonDocument("_id", new BsonString(collectionId)));
     }
 
     public void cloneDataSourceCollection(String targetId, String sourceId) {
