@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.hereon.xenv</groupId>
-    <artifactId>hq</artifactId>
+    <artifactId>HeadQuarter</artifactId>
     <version>2.6-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -24,7 +24,7 @@
     <scm>
         <connection>scm:git:git@github.com:${github.organization}/${github.repo}.git</connection>
         <developerConnection>scm:git:git@github.com:${github.organization}/${github.repo}.git</developerConnection>
-        <url>https://github.com/hzg-wpi/${github.repo}</url>
+        <url>https://github.com/${github.organization}/${github.repo}</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -208,7 +208,6 @@
         <profile>
             <id>release</id>
             <build>
-                <finalName>HeadQuarter-${project.version}</finalName>
                 <plugins>
                     <plugin>
                         <groupId>de.jutzig</groupId>
@@ -224,7 +223,7 @@
                                     deploy
                                 </phase>
                                 <configuration>
-                                    <description>Automated release preformed by maven plugin</description>
+                                    <description>Automated release performed by maven plugin</description>
                                     <releaseName>${project.artifactId}-${project.version}</releaseName>
                                     <tag>${project.artifactId}-${project.version}</tag>
                                     <fileSets>
