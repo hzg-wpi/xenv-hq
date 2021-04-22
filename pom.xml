@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.hereon.xenv</groupId>
-    <artifactId>HeadQuarter</artifactId>
+    <artifactId>hq</artifactId>
     <version>2.5-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -208,6 +208,7 @@
         <profile>
             <id>release</id>
             <build>
+                <finalName>HeadQuarter-${project.version}</finalName>
                 <plugins>
                     <plugin>
                         <groupId>de.jutzig</groupId>
