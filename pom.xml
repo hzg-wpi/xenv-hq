@@ -71,19 +71,19 @@
             <version>1.7.5</version>
         </dependency>
         <dependency>
-            <groupId>de.hzg.wpi.tango.client.api</groupId>
-            <artifactId>ezTangoAPI</artifactId>
-            <version>3.0.0</version>
+            <groupId>de.hereon.tango.client.api</groupId>
+            <artifactId>ez</artifactId>
+            <version>3.0.1</version>
         </dependency>
         <dependency>
-            <groupId>hzg.wpn</groupId>
+            <groupId>de.hereon</groupId>
             <artifactId>utils</artifactId>
-            <version>21</version>
+            <version>22</version>
         </dependency>
         <dependency>
-            <groupId>org.tango-controls</groupId>
-            <artifactId>JTangoServer</artifactId>
-            <version>9.5.18-hzg.7</version>
+            <groupId>de.hereon.tango</groupId>
+            <artifactId>server</artifactId>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -248,9 +248,8 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>bintray-release</id>
-            <name>bintray</name>
-            <url>http://dl.bintray.com/hzgde/hzg-wpn-projects</url>
+            <id>github-hzg</id>
+            <url>https://maven.pkg.github.com/hzg-wpi/*</url>
         </repository>
     </repositories>
 </project>
