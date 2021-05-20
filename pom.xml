@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>de.hzg.wpi.xenv</groupId>
+    <groupId>de.hereon.xenv</groupId>
     <artifactId>HeadQuarter</artifactId>
-    <version>2.5-SNAPSHOT</version>
+    <version>2.7-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <developers>
@@ -24,7 +24,7 @@
     <scm>
         <connection>scm:git:git@github.com:${github.organization}/${github.repo}.git</connection>
         <developerConnection>scm:git:git@github.com:${github.organization}/${github.repo}.git</developerConnection>
-        <url>https://github.com/hzg-wpi/${github.repo}</url>
+        <url>https://github.com/${github.organization}/${github.repo}</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -33,7 +33,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>4.13.1</version>
         </dependency>
         <dependency>
             <groupId> org.apache.commons</groupId>
@@ -71,19 +71,19 @@
             <version>1.7.5</version>
         </dependency>
         <dependency>
-            <groupId>de.hzg.wpi.tango.client.api</groupId>
-            <artifactId>ezTangoAPI</artifactId>
-            <version>3.0.0</version>
+            <groupId>de.hereon.tango.client.api</groupId>
+            <artifactId>ez</artifactId>
+            <version>3.0.1</version>
         </dependency>
         <dependency>
-            <groupId>hzg.wpn</groupId>
+            <groupId>de.hereon</groupId>
             <artifactId>utils</artifactId>
-            <version>21</version>
+            <version>22</version>
         </dependency>
         <dependency>
-            <groupId>org.tango-controls</groupId>
-            <artifactId>JTangoServer</artifactId>
-            <version>9.5.18-hzg.7</version>
+            <groupId>de.hereon.tango</groupId>
+            <artifactId>server</artifactId>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -94,7 +94,7 @@
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
-            <version>1.9.12</version>
+            <version>1.10.9</version>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
@@ -223,7 +223,7 @@
                                     deploy
                                 </phase>
                                 <configuration>
-                                    <description>Automated release preformed by maven plugin</description>
+                                    <description>Automated release performed by maven plugin</description>
                                     <releaseName>${project.artifactId}-${project.version}</releaseName>
                                     <tag>${project.artifactId}-${project.version}</tag>
                                     <fileSets>
@@ -248,9 +248,8 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>bintray-release</id>
-            <name>bintray</name>
-            <url>http://dl.bintray.com/hzgde/hzg-wpn-projects</url>
+            <id>github-hzg</id>
+            <url>https://maven.pkg.github.com/hzg-wpi/*</url>
         </repository>
     </repositories>
 </project>
