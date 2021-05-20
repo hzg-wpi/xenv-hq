@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import de.hzg.wpi.xenv.hq.configuration.ConfigurationManager;
 import de.hzg.wpi.xenv.hq.manager.XenvManager;
 import fr.esrf.Tango.DevVarLongStringArray;
+import fr.esrf.TangoApi.ApiUtil;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,8 @@ public class HeadQuarter {
     private List<XenvManager> xenvManagers;
     private List<ConfigurationManager> configurationManagers;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
+        ApiUtil.set_db_obj(System.getProperty("TANGO_HOST", "localhost:10000"));
         XenvManager.createTempDirectory();
         XenvManager.extractResources();
         setSystemProperties();
