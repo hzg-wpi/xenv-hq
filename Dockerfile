@@ -13,4 +13,4 @@ RUN addgroup --system javauser && adduser -S -s /bin/false -G javauser javauser
 
 USER javauser
 
-CMD ["dumb-init", "java", "-jar", "-server", "/usr/share/hq.jar", "dev"]
+CMD ["dumb-init", "java", "-jar", "-server", "-DTANGO_HOST=${TANGO_HOST}", "/usr/share/hq.jar", "dev"]
