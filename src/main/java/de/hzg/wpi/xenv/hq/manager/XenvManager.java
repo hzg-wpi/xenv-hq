@@ -6,7 +6,7 @@ import de.hzg.wpi.xenv.hq.ant.AntTaskExecutor;
 import de.hzg.wpi.xenv.hq.util.FilesHelper;
 import de.hzg.wpi.xenv.hq.util.yaml.YamlHelper;
 import fr.esrf.Tango.DevFailed;
-import fr.esrf.TangoApi.DeviceProxyFactory;
+import fr.esrf.TangoApi.DeviceProxy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.tools.ant.BuildEvent;
@@ -195,8 +195,7 @@ public class XenvManager {
 
     private void tryToKillViaDServer(String shortClassName) {
         try {
-            TangoProxy dserver = TangoProxies.newDeviceProxyWrapper(
-                    DeviceProxyFactory.get("dserver/" + shortClassName + "/" + configuration.instance_name, configuration.tango_host));
+            TangoProxy dserver = TangoProxies.newDeviceProxyWrapper(new DeviceProxy("tango://" + configuration.tango_host + "/" + "dserver/" + shortClassName + "/" + configuration.instance_name));
 
             dserver.executeCommand("Kill");
             deviceManager.pushStatusChangeEvent(String.format("Server %s has been stopped", shortClassName));

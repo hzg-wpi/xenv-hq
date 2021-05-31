@@ -1,4 +1,4 @@
-tango_host: hzgxenvtest:10000
+tango_host: hzgxenvtest.desy.de:10000
 instance_name: test
 tine_home: /home/khokhria/tine/database
 log_home: ../logs
