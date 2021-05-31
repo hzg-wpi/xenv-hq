@@ -18,5 +18,7 @@ RUN chown -R javauser /app
 
 USER javauser
 
+WORKDIR /app
+
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD java -jar -server -DTANGO_HOST=$TANGO_HOST -Dmongodb.host=$MONGODB_HOST /app/bin/hq.jar dev
