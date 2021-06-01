@@ -3,11 +3,6 @@ FROM adoptopenjdk/openjdk11:alpine-jre
 RUN apk add dumb-init
 MAINTAINER igor.khokhriakov@hzg.de
 
-ARG TANGO_HOST=""
-ARG MONGODB_HOST=""
-ENV TANGO_HOST=$TANGO_HOST
-ENV MONGODB_HOST=$MONGODB_HOST
-
 ARG JAR_FILE
 ADD target/${JAR_FILE} /app/bin/hq.jar
 
