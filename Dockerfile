@@ -16,4 +16,4 @@ USER javauser
 WORKDIR /app
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["/bin/bash", "-c", "java -jar -server -DTANGO_HOST=$TANGO_HOST -Dmongodb.host=$MONGODB_HOST /app/bin/hq.jar dev"]
+CMD ["/bin/bash", "-c", "/usr/bin/wait-for-it $TANGO_HOST --strict --timeout=30 -- java -jar -server -DTANGO_HOST=$TANGO_HOST -Dmongodb.host=$MONGODB_HOST /app/bin/hq.jar dev"]
