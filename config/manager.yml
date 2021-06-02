@@ -1,5 +1,5 @@
-tango_host: hzgxenvtest.desy.de:10000
-instance_name: test
+tango_host: localhost:10000
+instance_name: dev
 tine_home: /home/khokhria/tine/database
 log_home: ../logs
 log_level: DEBUG

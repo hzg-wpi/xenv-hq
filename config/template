@@ -25,7 +25,7 @@ echo "Using MAX_RAM=$MAX_RAM"
 
 echo "Using XENV_ROOT=$XENV_ROOT"
 
-JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64
+JAVA_HOME=/usr/local/openjdk-11
 echo "Using java:"
 $($JAVA_HOME/bin/java -version)
 
