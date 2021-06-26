@@ -8,6 +8,8 @@ import org.apache.commons.jxpath.JXPathContext;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -17,16 +19,15 @@ import static org.junit.Assert.assertNotNull;
  */
 public class NexusXmlGeneratorTest {
 
-    NexusXml nexusXml;
+    NxGroup nexusXml;
 
     @Before
     public void before() throws Exception {
-        nexusXml = XmlHelper.fromString("<definition>\n" +
-                "    <group type=\"NXentry\" name=\"entry\">\n" +
+        nexusXml = XmlHelper.fromString(
+                "<group type=\"NXentry\" name=\"entry\">\n" +
                 "        <group type=\"NXcollection\" name=\"hardware\">\n" +
                 "        </group>\n" +
-                "    </group>\n" +
-                "</definition>", NexusXml.class);
+                "    </group>", NxGroup.class);
     }
 
     @Test
@@ -39,9 +40,9 @@ public class NexusXmlGeneratorTest {
 
         NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
-        NexusXml nexusXml1 = instance.call();
+        NxGroup nexusXml1 = instance.call();
 
-        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='entry']/groups[name='hardware']/groups[name='motor1']");
+        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='hardware']/groups[name='motor1']");
 
         assertNotNull(result);
         assertEquals("NXcollection", result.type);
@@ -60,9 +61,9 @@ public class NexusXmlGeneratorTest {
 
         NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
-        NexusXml nexusXml1 = instance.call();
+        NxGroup nexusXml1 = instance.call();
 
-        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='entry']/groups[name='software']/groups[name='motor1']");
+        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='software']/groups[name='motor1']");
 
         assertNotNull(result);
         assertEquals("NXcollection", result.type);
@@ -82,9 +83,9 @@ public class NexusXmlGeneratorTest {
 
         NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
-        NexusXml nexusXml1 = instance.call();
+        NxGroup nexusXml1 = instance.call();
 
-        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='entry']/groups[name='hardware']/groups[name='motor1']");
+        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='hardware']/groups[name='motor1']");
 
         assertNotNull(result);
         assertEquals("NXcollection", result.type);
@@ -106,9 +107,9 @@ public class NexusXmlGeneratorTest {
 
         NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
-        NexusXml nexusXml1 = instance.call();
+        NxGroup nexusXml1 = instance.call();
 
-        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='entry']/groups[name='hardware']/groups[name='motor1']");
+        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='hardware']/groups[name='motor1']");
 
         assertNotNull(result);
         assertEquals("NXcollection", result.type);
@@ -128,9 +129,9 @@ public class NexusXmlGeneratorTest {
 
         NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
-        NexusXml nexusXml1 = instance.call();
+        NxGroup nexusXml1 = instance.call();
 
-        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='entry']/groups[name='hardware']/groups[name='motor1']");
+        NxGroup result = (NxGroup) JXPathContext.newContext(nexusXml1).getValue("/groups[name='hardware']/groups[name='motor1']");
 
         assertNotNull(result);
         assertEquals("NXcollection", result.type);
@@ -143,13 +144,12 @@ public class NexusXmlGeneratorTest {
 
     @Test
     public void generateNxField_replaceExisting() throws Exception {
-        nexusXml = XmlHelper.fromString("<definition>\n" +
+        nexusXml = XmlHelper.fromString(
                 "    <group type=\"NXentry\" name=\"entry\">\n" +
                 "        <group type=\"NXcollection\" name=\"hardware\">\n" +
                 "            <field type=\"string\" name=\"name\"/>\n" +
                 "        </group>\n" +
-                "    </group>\n" +
-                "</definition>", NexusXml.class);
+                "    </group>", NxGroup.class);
 
 
         Configuration configuration = new Configuration();
@@ -160,13 +160,13 @@ public class NexusXmlGeneratorTest {
 
         NexusXmlGenerator instance = new NexusXmlGenerator(configuration.dataSourceList, nexusXml);
 
-        NexusXml nexusXml1 = instance.call();
+        NxGroup nexusXml1 = instance.call();
 
-        NxField result = (NxField) JXPathContext.newContext(nexusXml1).getValue("/groups[name='entry']/groups[name='hardware']/fields[name='name']");
+        List<NxField> result = (List<NxField>) JXPathContext.newContext(nexusXml1).selectNodes("/groups[name='hardware']/fields[name='name']");
 
         assertNotNull(result);
         //TODO should we replace existing?
-        assertEquals(2, nexusXml1.groups.get(0).groups.get(0).fields.size());
+        assertEquals(2, result.size());
 //        assertEquals("uint16", result.type);
     }
 }

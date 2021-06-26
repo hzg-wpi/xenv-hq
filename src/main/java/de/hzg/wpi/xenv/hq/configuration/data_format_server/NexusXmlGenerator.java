@@ -6,23 +6,24 @@ import org.apache.commons.jxpath.JXPathNotFoundException;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 /**
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 2/20/19
  */
-public class NexusXmlGenerator implements Callable<NexusXml> {
+public class NexusXmlGenerator implements Callable<NxGroup> {
     private final List<DataSource> dataSourceList;
-    private final NexusXml nexusXml;
+    private final NxGroup nexusXml;
 
-    public NexusXmlGenerator(List<DataSource> dataSourceList, NexusXml nexusXml) {
+    public NexusXmlGenerator(List<DataSource> dataSourceList, NxGroup nexusXml) {
         this.dataSourceList = dataSourceList;
         this.nexusXml = nexusXml;
     }
 
     @Override
-    public NexusXml call() throws Exception {
+    public NxGroup call() throws Exception {
         JXPathContext jxPathContext = JXPathContext.newContext(nexusXml);
 
         dataSourceList
@@ -39,11 +40,12 @@ public class NexusXmlGenerator implements Callable<NexusXml> {
 
     private NxGroup getParentNxGroup(JXPathContext jxPathContext, NxPathParser.JxPath jxPath) {
         try {
-            return (NxGroup) jxPathContext.getValue(jxPath.getJxParentPath().toString());
+            return (NxGroup) jxPathContext.getValue(
+                    Optional.ofNullable(jxPath.getJxParentPath()).orElse(new NxPathParser.JxPath()).toString());
         } catch (JXPathNotFoundException e) {
             NxGroup result = new NxGroup();
             result.name = jxPath.getJxParentPath().getName();
-            result.type = NexusXml.NX_COLLECTION;
+            result.type = "NXcollection";
 
             getParentNxGroup(jxPathContext, jxPath.getJxParentPath()).groups.add(result);
 

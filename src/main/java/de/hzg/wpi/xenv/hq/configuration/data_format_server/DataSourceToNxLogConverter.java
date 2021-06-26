@@ -23,7 +23,7 @@ public class DataSourceToNxLogConverter implements Callable<NxGroup> {
         NxGroup nxLog = new NxGroup();
 
         nxLog.name = name;
-        nxLog.type = NexusXml.NX_LOG;
+        nxLog.type = "NXlog";
 
         NxField value = new DataSourceToNxFieldWithDimensionsConverter("value", type).call();
         NxField time = new DataSourceToNxFieldWithDimensionsConverter("time", "uint64").call();

@@ -16,7 +16,7 @@ public class NexusXmlIT {
 
     @Test
     public void fromXml() throws Exception {
-        NexusXml result = XmlHelper.fromXml(Paths.get("configuration/profiles/test/test.nxdl.xml"), NexusXml.class);
+        NxGroup result = XmlHelper.fromXml(Paths.get("configuration/profiles/test/test.nxdl.xml"), NxGroup.class);
 
         NxGroup current = (NxGroup) JXPathContext.newContext(result).
                 getValue("/groups[name='entry']/groups[name='hardware']/groups[name='beam_current']/groups[1]");
@@ -26,8 +26,8 @@ public class NexusXmlIT {
 
     @Test
     public void fromXmlString() throws Exception {
-        NexusXml result = XmlHelper.fromString(
-                "<definition>\n" +
+        NxGroup result = XmlHelper.fromString(
+
                         "    <group type=\"NXentry\" name=\"entry\">\n" +
                         "        <group type=\"NXcollection\" name=\"hardware\">\n" +
                         "            <group type=\"NXcollection\" name=\"beam_current\" src=\"/PETRA/Idc/Buffer-0/I.SCH\">\n" +
@@ -45,8 +45,7 @@ public class NexusXmlIT {
                         "                </group>\n" +
                         "            </group>\n" +
                         "        </group>\n" +
-                        "    </group>\n" +
-                        "</definition>", NexusXml.class
+                        "    </group>", NxGroup.class
         );
 
         NxGroup current = (NxGroup) JXPathContext.newContext(result).

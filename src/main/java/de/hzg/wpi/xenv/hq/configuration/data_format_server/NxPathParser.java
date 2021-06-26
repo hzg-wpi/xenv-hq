@@ -1,7 +1,10 @@
 package de.hzg.wpi.xenv.hq.configuration.data_format_server;
 
+import com.google.common.collect.Lists;
+
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,12 +21,17 @@ public class NxPathParser {
 
     public JxPath toJXPath() {
         String[] split = nxPath.split("/");
-        return new JxPath(Arrays.stream(split).skip(1).collect(Collectors.toList()));
+        return new JxPath(Arrays.stream(split).skip(2).collect(Collectors.toList()));//2 - root and entry
     }
 
     public static class JxPath {
         List<String> parts;
         List<String> jxParts;
+
+        public JxPath() {
+            this.parts = Collections.emptyList();
+            this.jxParts = Collections.singletonList("/");
+        }
 
         public JxPath(List<String> parts) {
             this.parts = parts;

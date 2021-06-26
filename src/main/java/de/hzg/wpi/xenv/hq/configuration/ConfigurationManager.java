@@ -8,8 +8,8 @@ import de.hzg.wpi.xenv.hq.configuration.camel.CamelRoute;
 import de.hzg.wpi.xenv.hq.configuration.collections.Collection;
 import de.hzg.wpi.xenv.hq.configuration.collections.CollectionsManager;
 import de.hzg.wpi.xenv.hq.configuration.collections.DataSource;
-import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXml;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.NexusXmlGenerator;
+import de.hzg.wpi.xenv.hq.configuration.data_format_server.NxGroup;
 import de.hzg.wpi.xenv.hq.configuration.data_format_server.mapping.MappingGenerator;
 import de.hzg.wpi.xenv.hq.configuration.mongo.CamelDb;
 import de.hzg.wpi.xenv.hq.configuration.mongo.CollectionsDb;
@@ -95,10 +95,13 @@ public class ConfigurationManager {
     private PredatorManager predatorManager;
     private CollectionsManager collectionsManager;
 
-    private NexusXml getNexusFile() throws Exception {
-        NexusXml nexusXml = XmlHelper.fromXml(
-                Paths.get("config").resolve(TEMPLATE_NXDL_XML), NexusXml.class);
-        FutureTask<NexusXml> task = new FutureTask<>(
+    private NxGroup getNexusFile() throws Exception {
+        NxGroup nexusXml = new NxGroup(){
+            final String name = "entry";
+            final String type = "NxEntry";
+        };
+
+        FutureTask<NxGroup> task = new FutureTask<>(
                 new NexusXmlGenerator(getSelectedDataSources(), nexusXml));
         task.run();
 
