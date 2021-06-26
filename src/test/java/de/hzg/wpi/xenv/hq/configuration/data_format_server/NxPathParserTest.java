@@ -18,6 +18,6 @@ public class NxPathParserTest {
 
         NxPathParser.JxPath result = instance.toJXPath();
 
-        assertEquals("/groups[name='entry']/groups[name='hardware']", result.toString());
+        assertEquals("/groups[name='hardware']", result.toString());
     }
 }
