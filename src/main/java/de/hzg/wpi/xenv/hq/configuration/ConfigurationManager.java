@@ -96,10 +96,9 @@ public class ConfigurationManager {
     private CollectionsManager collectionsManager;
 
     private NxGroup getNexusFile() throws Exception {
-        NxGroup nexusXml = new NxGroup(){
-            final String name = "entry";
-            final String type = "NxEntry";
-        };
+        NxGroup nexusXml = new NxGroup();
+        nexusXml.name = "entry";
+        nexusXml.type = "NXentry";
 
         FutureTask<NxGroup> task = new FutureTask<>(
                 new NexusXmlGenerator(getSelectedDataSources(), nexusXml));
@@ -158,7 +157,7 @@ public class ConfigurationManager {
                     dfsConfigurationOutputDir.resolve("nxpath.mapping"))
                     .write(getNexusMapping().getBytes());
         } catch (Exception e) {
-            logger.error("Failed to write DataFormatServer configuration");
+            logger.error("Failed to write DataFormatServer configuration", e);
             deviceManager.pushStateChangeEvent(DeviceState.ALARM);
         }
     }
