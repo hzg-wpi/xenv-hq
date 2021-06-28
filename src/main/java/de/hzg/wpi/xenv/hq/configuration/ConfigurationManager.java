@@ -131,16 +131,31 @@ public class ConfigurationManager {
         return XmlHelper.toXmlString(getNexusFile());
     }
 
+    private volatile Path dfsConfigurationOutputDir = Paths.get("etc/DataFormatServer");
+
+    @Attribute(isMemorized = true)
+    public String getDataFormatServerConfigurationOutputDir(){
+        return dfsConfigurationOutputDir.toString();
+    }
+
+    @Attribute(isMemorized = true)
+    @AttributeProperties(description = "full path to the DataFormatServer configuration output dir")
+    public void setDataFormatServerConfigurationOutputDir(String v) throws IOException {
+        dfsConfigurationOutputDir = Paths.get(v);
+        if(!Files.exists(dfsConfigurationOutputDir)){
+            Files.createDirectories(dfsConfigurationOutputDir);
+        }
+    }
+
     @Command
     public void writeDataFormatServerConfiguration() {
         try {
-            Path conf = Files.createDirectories(Paths.get("etc/DataFormatServer"));
             Files.newOutputStream(
-                    conf.resolve("default.nxdl.xml"))
+                    dfsConfigurationOutputDir.resolve("default.nxdl.xml"))
                     .write(getNexusFileXml().getBytes());
 
             Files.newOutputStream(
-                    conf.resolve("nxpath.mapping"))
+                    dfsConfigurationOutputDir.resolve("nxpath.mapping"))
                     .write(getNexusMapping().getBytes());
         } catch (Exception e) {
             logger.error("Failed to write DataFormatServer configuration");
