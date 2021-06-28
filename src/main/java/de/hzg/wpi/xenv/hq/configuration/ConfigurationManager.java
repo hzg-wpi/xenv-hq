@@ -193,12 +193,27 @@ public class ConfigurationManager {
         camelManager.deleteCamelRoute(id);
     }
 
+    private volatile Path camelConfigurationOutputDir = Paths.get("etc/CamelIntegration");
+
+    @Attribute(isMemorized = true)
+    public String getCamelConfigurationOutputDir(){
+        return dfsConfigurationOutputDir.toString();
+    }
+
+    @Attribute(isMemorized = true)
+    @AttributeProperties(description = "full path to the CamelIntegration configuration output dir")
+    public void setCamelConfigurationOutputDir(String v) throws IOException {
+        camelConfigurationOutputDir = Paths.get(v);
+        if(!Files.exists(camelConfigurationOutputDir)){
+            Files.createDirectories(camelConfigurationOutputDir);
+        }
+    }
+
     @Command
     public void writeCamelConfiguration() {
         try {
-            Path conf = Files.createDirectories(Paths.get("etc/CamelIntegration"));
             Files.newOutputStream(
-                    conf.resolve("routes.xml"))
+                    camelConfigurationOutputDir.resolve("routes.xml"))
                     .write(getCamelRoutesXml().getBytes());
         } catch (Exception e) {
             logger.error("Failed to write DataFormatServer configuration");
@@ -224,12 +239,27 @@ public class ConfigurationManager {
         return XmlHelper.toXmlString(task.get());
     }
 
+    private volatile Path ssConfigurationOutputDir = Paths.get("etc/StatusServer");
+
+    @Attribute(isMemorized = true)
+    public String getStatusServerConfigurationOutputDir(){
+        return ssConfigurationOutputDir.toString();
+    }
+
+    @Attribute(isMemorized = true)
+    @AttributeProperties(description = "full path to the StatusServer configuration output dir")
+    public void setStatusServerConfigurationOutputDir(String v) throws IOException {
+        ssConfigurationOutputDir = Paths.get(v);
+        if(!Files.exists(ssConfigurationOutputDir)){
+            Files.createDirectories(ssConfigurationOutputDir);
+        }
+    }
+
     @Command
     public void writeStatusServerConfiguration() {
         try {
-            Path conf = Files.createDirectories(Paths.get("etc/StatusServer"));
             Files.newOutputStream(
-                    conf.resolve("status_server.xml"))
+                    ssConfigurationOutputDir.resolve("status_server.xml"))
                     .write(getStatusServerXml().getBytes());
         } catch (Exception e) {
             logger.error("Failed to write StatusServer configuration");
@@ -259,16 +289,31 @@ public class ConfigurationManager {
         return predatorManager.getPreExperimentDataCollectorLoginProperties().toArray(String[]::new);
     }
 
+    private volatile Path predatorConfigurationOutputDir = Paths.get("etc/PreExperimentDataCollector");
+
+    @Attribute(isMemorized = true)
+    public String getPreExperimentDataCollectorConfigurationOutputDir(){
+        return predatorConfigurationOutputDir.toString();
+    }
+
+    @Attribute(isMemorized = true)
+    @AttributeProperties(description = "full path to the PreExperimentDataCollector configuration output dir")
+    public void setPreExperimentDataCollectorConfigurationOutputDir(String v) throws IOException {
+        predatorConfigurationOutputDir = Paths.get(v);
+        if(!Files.exists(predatorConfigurationOutputDir)){
+            Files.createDirectories(predatorConfigurationOutputDir);
+        }
+    }
+
     @Command
     public void writePreExperimentDataCollectorConfiguration() {
         try {
-            Path conf = Files.createDirectories(Paths.get("etc/PreExperimentDataCollector"));
             Files.newOutputStream(
-                    conf.resolve("meta.yaml"))
+                    predatorConfigurationOutputDir.resolve("meta.yaml"))
                     .write(getPreExperimentDataCollectorYaml().getBytes());
 
             Files.newOutputStream(
-                    conf.resolve("login.properties"))
+                    predatorConfigurationOutputDir.resolve("login.properties"))
                     .write(
                             String.join("\n", getPreExperimentDataCollectorLoginProperties()).getBytes());
         } catch (Exception e) {
